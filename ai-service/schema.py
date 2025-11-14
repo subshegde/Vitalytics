@@ -53,6 +53,9 @@ class NutritionItem(BaseModel):
     benefit: str
     source_foods: List[str]
 
+class NutritionItemDetailed(BaseModel):
+    title: str
+
 class NutritionsResponse(BaseModel):
     report_title: str
     nutritions: List[NutritionItem]
@@ -79,13 +82,18 @@ class ProgressionRequest(BaseModel):
     curr_score: float
     query: str
 
+class ProgressionMetric(BaseModel):
+    metric_name: str
+    change_description: str
+    confidence_score: float
+
 class ProgressionResult(BaseModel):
     """Model for the progression tracking result."""
 
     analysis_date: str
-    status: str  # e.g., 'Improving', 'Worsening', 'Stable'
-    change_description: str
-    suggested_adjustment: str
+    overall_change: str
+    metrics_tracked: ProgressionMetric
+    visual_notes: str
 
 class FullSummaryRequest(BaseModel):
     """Model for the final full summary."""

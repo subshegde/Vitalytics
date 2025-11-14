@@ -5,6 +5,7 @@ import base64
 import json
 from openai import OpenAI
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -97,3 +98,18 @@ def create_image_payload(
         input_payload["response_format"] = response_format
 
     return input_payload
+
+
+def get_current_date_and_time():
+    """
+    Retrieves and formats the current date and time.
+    """
+    # Get the current date and time object
+    now = datetime.now()
+    
+    # Format the date and time into a readable string
+    # %Y = Year, %m = Month, %d = Day
+    # %H = Hour (24-hour), %M = Minute, %S = Second
+    date_string = now.strftime("Today's Date: %Y-%m-%d\nCurrent Time: %H:%M:%S")
+    
+    return date_string

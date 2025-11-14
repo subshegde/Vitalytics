@@ -18,7 +18,12 @@ from schema import (
     FullSummaryRequest,
     FullSummary,
 )
-from llm import call_llm, create_image_payload, create_text_payload
+from llm import (
+    call_llm, 
+    create_image_payload, 
+    create_text_payload, 
+    get_current_date_and_time
+)
 
 from dependency import (
     DETAILED_NUTRITION_RESPONSE_SCHEMA,
@@ -277,22 +282,22 @@ async def track_progression(request: ProgressionRequest):
     system_prompt = PROGRESSION_TRACKING_PROMPT.format(CURR_SCORE=curr_score)
 
     request_payload = create_image_payload(system_prompt, query, [filename1, filename2], PROGRESSION_TRACKING_RESPONSE_SCHEMA)
+    print("Suggestion input payload: ", request_payload)
+    
     response = call_llm(request_payload)
+    response = json.loads(response)
 
-    # Dummy logic: Assume the user is improving slightly
-    progression_status = "Improving"
-    change_description = "There is a noticeable reduction in redness and scaling compared to the initial image."
-    suggested_adjustment = "Continue with the current medication and dietary plan. Apply moisturizer more frequently."
+    print("Response: ", response)
 
     user_id = request_dict["user_id"]
     if(not DB.get(user_id)):
         DB[user_id] = DEFAULT_USER
 
     response = ProgressionResult(
-        analysis_date="2025-11-13",
-        status=progression_status,
-        change_description=change_description,
-        suggested_adjustment=suggested_adjustment,
+        analysis_date=get_current_date_and_time(),
+        overall_change=response.get("overall_change"),
+        metrics_tracked=response.get("metrics_tracked", {}),
+        visual_notes=response.get("visual_notes"),
     )
 
     DB[user_id]["progression_tracking"] = response
