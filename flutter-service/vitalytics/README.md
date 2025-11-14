@@ -61,6 +61,8 @@ Suggestions based on skin health:
 - JSON serialization with `freezed` and `json_serializable`
 
 ---
+### **Video**  
+https://github.com/user-attachments/assets/c350f8f4-e056-43aa-9df9-66ab11b3ae30
 
 These are the Flutter packages used in the project:
 
