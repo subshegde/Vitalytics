@@ -36,7 +36,7 @@ class FullSummary {
 }
 
 class KeyMetrics {
-  int? dietScore;
+  double? dietScore;
   String? progressionTrend;
 
   KeyMetrics({this.dietScore, this.progressionTrend});

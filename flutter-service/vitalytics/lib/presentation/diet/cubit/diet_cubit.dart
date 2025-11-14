@@ -14,6 +14,7 @@ class DietCubit extends Cubit<DietState> {
   Future<void> fetchDiet(DietRequest request) async {
     emit(DietLoading());
     try {
+      print('request.userId ${request.userId}');
       final response = await _dioClient.post(
         ApiEndpoints.dietSummary,
         data: {

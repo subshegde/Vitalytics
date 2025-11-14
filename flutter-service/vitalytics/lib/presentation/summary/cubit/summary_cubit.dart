@@ -14,6 +14,7 @@ class FullSummaryCubit extends Cubit<FullSummaryState> {
     emit(FullSummaryLoading());
 
     try {
+      print('userid $userId');
       final response = await _client.post(
         ApiEndpoints.fullSummary,
         data: {
