@@ -1,11 +1,27 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vitalytics/data/db/disease_detection_dao.dart';
 import 'package:vitalytics/data/models/discover_item.dart';
 import 'package:vitalytics/data/models/skin_care_tip_model.dart';
+import 'package:vitalytics/data/models/user/user.dart';
+import 'package:vitalytics/data/dao/user_dao.dart';
+import 'package:vitalytics/data/request/diet_request.dart';
 import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
+import 'package:vitalytics/presentation/diet/cubit/diet_cubit.dart';
+import 'package:vitalytics/presentation/diet/diet_page.dart';
+import 'package:vitalytics/presentation/summary/summary_page.dart';
+import 'package:vitalytics/sl.dart';
+
+import '../../nutrition_screen/nutrition_screen.dart';
+import '../../progress_screen/progress_screen.dart';
+import '../cubit/hemeo_cub.dart';
+import '../cubit/recomendation_cubit.dart';
 
 // THEME COLORS
 const Color primeGreen950 = Color(0xFF0a2e26);
@@ -23,6 +39,8 @@ class HomeDashboardPage extends StatefulWidget {
 
 class _HomeDashboardPageState extends State<HomeDashboardPage> {
   int _selectedIndex = 0;
+  User? _loggedInUser;
+  final UserDao _userDao = UserDao();
 
   final List<SkinCareTip> _skinCareTips = [
     SkinCareTip(
@@ -66,6 +84,24 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadLoggedInUser();
+  }
+
+  // ---------------- LOAD LOGGED-IN USER -----------------
+  Future<void> _loadLoggedInUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('logged_in_user_id');
+    if (userId != null) {
+      final user = await _userDao.getUserById(userId);
+      setState(() {
+        _loggedInUser = user;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primeGreen950,
@@ -77,19 +113,14 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             children: [
               _buildAppBar(context),
               const SizedBox(height: 24),
-
               _buildQuickActions(context),
               const SizedBox(height: 32),
-
               _buildSectionTitle("Skin Care Tips"),
               const SizedBox(height: 16),
-
               _buildSkinCareTipsList(context),
               const SizedBox(height: 32),
-
               _buildSectionTitle("Discover More"),
               const SizedBox(height: 16),
-
               _buildDiscoverGrid(context),
               const SizedBox(height: 24),
             ],
@@ -100,7 +131,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- APP BAR -----------------
-
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -108,20 +138,26 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
+              if (_loggedInUser != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfilePage(userId: _loggedInUser!.id ?? 0),
+                  ),
+                );
+              }
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 26,
-              backgroundImage: NetworkImage(
-                'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
-              ),
+              backgroundImage: _loggedInUser?.profilePicPath != null
+                  ? FileImage(File(_loggedInUser!.profilePicPath!))
+                  : const NetworkImage(
+                          'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
+                        )
+                        as ImageProvider,
             ),
           ),
           const SizedBox(width: 12),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -130,18 +166,21 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                 style: TextStyle(color: primeTextDim, fontSize: 16),
               ),
               Text(
-                "Alex",
+                _loggedInUser?.username ?? "Guest",
                 style: TextStyle(
                   color: primeText,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (_loggedInUser?.email != null)
+                Text(
+                  _loggedInUser!.email!,
+                  style: TextStyle(color: primeTextDim, fontSize: 14),
+                ),
             ],
           ),
-
           const Spacer(),
-
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.notifications_none_outlined, size: 30),
@@ -153,47 +192,145 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- QUICK ACTIONS -----------------
-
   Widget _buildQuickActions(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _quickAction(
-            context,
-            icon: Icons.document_scanner_outlined,
-            label: "New Scan",
-            onTap: () => Navigator.push(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _quickAction(
               context,
-              MaterialPageRoute(builder: (_) => const AnalysisPage()),
+              icon: Icons.document_scanner_outlined,
+              label: "New Scan",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalysisPage()),
+              ),
             ),
-          ),
+            const SizedBox(width: 16),
 
-          _quickAction(
-            context,
-            icon: Icons.recommend_outlined,
-            label: "Recommendation",
-            onTap: () => Navigator.push(
+            _quickAction(
               context,
-              MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
+              icon: Icons.recommend_outlined,
+              label: "Recommendation",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider(create: (_) => RecommendationCubit()),
+                      BlocProvider(
+                        create: (_) => HomeopathyRecommendationCubit(),
+                      ),
+                    ],
+                    child: const RecommendationsScreen(),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 16),
 
-          _quickAction(
-            context,
-            icon: Icons.spa_outlined,
-            label: "Treatments",
-            onTap: () {},
-          ),
+            _quickAction(
+              context,
+              icon: Icons.spa_outlined,
+              label: "Nutritions",
+              onTap: () async {
+                final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+                final dao = DiseaseDetectionDao();
+                final diseases = await dao.getDiseasesByUser(loggedUserId);
 
-          _quickAction(
-            context,
-            icon: Icons.history_outlined,
-            label: "History",
-            onTap: () {},
-          ),
-        ],
+                final diseaseName = diseases.isNotEmpty
+                    ? diseases.last.detected_disease
+                    : "";
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NutritionScreen(
+                      userId: loggedUserId,
+                      diseaseType: diseaseName,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 16),
+
+            _quickAction(
+              context,
+              icon: Icons.monitor_weight_outlined,
+              label: "Diet",
+              onTap: () async {
+                final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+
+                final dao = DiseaseDetectionDao();
+                final diseases = await dao.getDiseasesByUser(loggedUserId);
+
+                final diseaseName = diseases.isNotEmpty
+                    ? diseases.last.detected_disease
+                    : "";
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MultiBlocProvider(
+                      providers: [
+                        BlocProvider(
+                          create: (_) => DietCubit()
+                            ..fetchDiet(
+                              DietRequest(
+                                userId: loggedUserId.toString(),
+                                diseaseType: diseaseName,
+                                query: "",
+                              ),
+                            ),
+                        ),
+                      ],
+                      child: DietPage(
+                        userId: loggedUserId.toString(),
+                        diseaseType: diseaseName,
+                        query: "",
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(width: 16),
+
+            // _quickAction(
+            //   context,
+            //   icon: Icons.history_outlined,
+            //   label: "Progress Tracking",
+            //   onTap: () => Navigator.push(
+            //     context,
+            //     MaterialPageRoute(builder: (_) => FullProgressScreen(                    )),
+            //   ),
+            // ),
+            // const SizedBox(width: 16),
+            _quickAction(
+              context,
+              icon: Icons.summarize,
+              label: "Summary",
+              onTap: () {
+                 final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FullSummaryScreen(
+                    userId: loggedUserId.toString(),
+                    query: "",
+                  )),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -218,7 +355,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- SECTION TITLE -----------------
-
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -234,7 +370,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- TIPS HORIZONTAL LIST -----------------
-
   Widget _buildSkinCareTipsList(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.65;
@@ -256,9 +391,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _tipCard(SkinCareTip tip, double width, double height) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
+       
       },
       child: Container(
         width: width,
@@ -274,7 +407,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             fit: StackFit.expand,
             children: [
               Image.network(tip.imageUrl, fit: BoxFit.cover),
-
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -287,7 +419,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   ),
                 ),
               ),
-
               Positioned(
                 left: 16,
                 right: 16,
@@ -319,7 +450,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- DISCOVER GRID -----------------
-
   Widget _buildDiscoverGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -341,9 +471,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _discoverCard(DiscoverItem item) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
+        // ScaffoldMessenger.of(context) .showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -356,7 +484,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             fit: StackFit.expand,
             children: [
               Image.network(item.imageUrl, fit: BoxFit.cover),
-
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -369,7 +496,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   ),
                 ),
               ),
-
               Positioned(
                 left: 16,
                 bottom: 16,

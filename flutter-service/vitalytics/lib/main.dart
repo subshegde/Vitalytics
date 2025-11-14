@@ -1,25 +1,38 @@
-import 'package:flutter/material.dart';
-import 'package:vitalytics/core/constants/app_colors.dart';
-import 'package:vitalytics/presentation/dashboard/pages/main_page.dart';
-import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
+// ignore_for_file: deprecated_member_use
 
-void main() {
-  runApp(const MyApp());
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vitalytics/core/constants/app_colors.dart';
+import 'package:vitalytics/presentation/dashboard/cubit/recomendation_cubit.dart';
+import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
+import 'package:vitalytics/presentation/dashboard/pages/signin.dart';
+import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
+import 'package:vitalytics/sl.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await setUpServiceLocator();
+  // Load SharedPreferences
+  final prefs = sl<SharedPreferences>();
+  final bool isLogin = prefs.getBool('isLogin') ?? false;
+
+  runApp(VitalyticsApp(isLogin: isLogin));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class VitalyticsApp extends StatelessWidget {
+  final bool isLogin;
+  const VitalyticsApp({super.key, required this.isLogin});
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Health Analysis',
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: primaryColor,
         scaffoldBackgroundColor: backgroundColor,
-        // Define the color scheme
+
         colorScheme: const ColorScheme(
           brightness: Brightness.dark,
           primary: primaryColor,
@@ -30,13 +43,12 @@ class MyApp extends StatelessWidget {
           onError: Colors.white,
           background: backgroundColor,
           onBackground: Colors.white,
-          surface: cardColor, // Used for cards, dialogs
-          onSurface: Colors.white, // Text on cards
-          tertiary: accentColor, // Accent color for buttons, highlights
+          surface: cardColor,
+          onSurface: Colors.white,
+          tertiary: accentColor,
           onTertiary: Colors.black,
         ),
-        
-        // Define text themes
+
         textTheme: const TextTheme(
           headlineSmall: TextStyle(
             fontWeight: FontWeight.bold,
@@ -48,21 +60,14 @@ class MyApp extends StatelessWidget {
             fontSize: 16.0,
             height: 1.4,
           ),
-          bodyMedium: TextStyle(
-            color: Colors.white60,
-            fontSize: 14.0,
-          ),
-          labelLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16.0,
-          ),
+          bodyMedium: TextStyle(color: Colors.white60, fontSize: 14.0),
+          labelLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
         ),
 
-        // Define button themes
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: accentColor, // Use the light accent
-            foregroundColor: Colors.black, // Text color on the button
+            backgroundColor: accentColor,
+            foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
@@ -74,31 +79,27 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // Define NavigationBar theme (Material 3)
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: cardColor, // Slightly lighter than pure black
-          indicatorColor: primaryColor, // Indicator color when selected
+          backgroundColor: cardColor,
+          indicatorColor: primaryColor,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           labelTextStyle: MaterialStateProperty.resolveWith((states) {
             if (states.contains(MaterialState.selected)) {
               return const TextStyle(
-                color: secondaryColor, // Selected label color
+                color: secondaryColor,
                 fontWeight: FontWeight.bold,
               );
             }
-            return const TextStyle(
-              color: Colors.white60, // Unselected label color
-            );
+            return const TextStyle(color: Colors.white60);
           }),
           iconTheme: MaterialStateProperty.resolveWith((states) {
             if (states.contains(MaterialState.selected)) {
-              return const IconThemeData(color: secondaryColor); 
+              return const IconThemeData(color: secondaryColor);
             }
-            return const IconThemeData(color: Colors.white60); 
+            return const IconThemeData(color: Colors.white60);
           }),
         ),
-        
-        // App bar theme (for consistency if you add other app bars)
+
         appBarTheme: const AppBarTheme(
           backgroundColor: backgroundColor,
           elevation: 0,
@@ -110,7 +111,13 @@ class MyApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.white),
         ),
       ),
-      home: const HomeDashboardPage(),
+      home: MultiBlocProvider(providers: [
+        BlocProvider<RecommendationCubit>(
+          create: (_) => RecommendationCubit(),
+          child: RecommendationsScreen(),
+        )
+
+      ], child: isLogin ? const HomeDashboardPage() : const LoginPage()),
       debugShowCheckedModeBanner: false,
     );
   }
