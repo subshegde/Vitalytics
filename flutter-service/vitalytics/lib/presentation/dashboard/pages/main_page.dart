@@ -1,4 +1,9 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../nutrition_screen/nutrition_screen.dart';
+import '../../progress_screen/cubit/progress_state.dart';
+import '../../progress_screen/progress_screen.dart';
 import 'analysis_page.dart'; // Import the separate analysis page
 
 class MainPage extends StatefulWidget {
@@ -14,9 +19,9 @@ class _MainPageState extends State<MainPage> {
 
   // List of pages to be displayed
   final List<Widget> _pages = [
-    const _PlaceholderPage(title: 'Home'), // Placeholder for Home
+    NutritionScreen(), // Placeholder for Home
     const AnalysisPage(), // Your separate Analysis page
-    const _PlaceholderPage(title: 'History'), // Placeholder for History
+    ProgressScreen(), // Placeholder for History
     const _PlaceholderPage(title: 'Profile'), // Placeholder for Profile
   ];
 
@@ -52,7 +57,7 @@ class _MainPageState extends State<MainPage> {
           });
         },
       ),
-      
+
       // Using Material 3 NavigationBar for a modern look
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -84,7 +89,6 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// A simple placeholder widget for the other pages
 class _PlaceholderPage extends StatelessWidget {
   final String title;
   const _PlaceholderPage({required this.title});
@@ -92,15 +96,14 @@ class _PlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
+      appBar: AppBar(title: Text(title)),
       body: Center(
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+        child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
       ),
     );
   }
 }
+
+
+
+

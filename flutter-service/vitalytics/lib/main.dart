@@ -11,7 +11,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Health Analysis',
       theme: ThemeData(
@@ -34,7 +33,7 @@ class MyApp extends StatelessWidget {
           tertiary: accentColor, // Accent color for buttons, highlights
           onTertiary: Colors.black,
         ),
-        
+
         // Define text themes
         textTheme: const TextTheme(
           headlineSmall: TextStyle(
@@ -47,14 +46,8 @@ class MyApp extends StatelessWidget {
             fontSize: 16.0,
             height: 1.4,
           ),
-          bodyMedium: TextStyle(
-            color: Colors.white60,
-            fontSize: 14.0,
-          ),
-          labelLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16.0,
-          ),
+          bodyMedium: TextStyle(color: Colors.white60, fontSize: 14.0),
+          labelLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
         ),
 
         // Define button themes
@@ -91,12 +84,16 @@ class MyApp extends StatelessWidget {
           }),
           iconTheme: MaterialStateProperty.resolveWith((states) {
             if (states.contains(MaterialState.selected)) {
-              return const IconThemeData(color: secondaryColor); // Selected icon color
+              return const IconThemeData(
+                color: secondaryColor,
+              ); // Selected icon color
             }
-            return const IconThemeData(color: Colors.white60); // Unselected icon color
+            return const IconThemeData(
+              color: Colors.white60,
+            ); // Unselected icon color
           }),
         ),
-        
+
         // App bar theme (for consistency if you add other app bars)
         appBarTheme: const AppBarTheme(
           backgroundColor: backgroundColor,
