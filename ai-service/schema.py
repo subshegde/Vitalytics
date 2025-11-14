@@ -113,7 +113,7 @@ class FullSummaryRequest(BaseModel):
     query: str
 
 class FullSummaryKeyMetric(BaseModel):
-    diet_score: int
+    diet_score: float
     progression_trend: str
 
 class FullSUmmarySection(BaseModel):

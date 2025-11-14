@@ -113,7 +113,7 @@ def call_llm_gemini(payload: Dict[str, Any]) -> Optional[str]:
     
     # Simple retry logic for handling transient errors
     max_retries = 3
-    delay = 1  # start delay in seconds
+    delay = 10  # start delay in seconds
     
     for attempt in range(max_retries):
         try:
@@ -144,7 +144,6 @@ def call_llm_gemini(payload: Dict[str, Any]) -> Optional[str]:
                 # Retry on rate limit or server errors
                 print(f"Retrying in {delay}s...")
                 time.sleep(delay)
-                delay *= 2
             else:
                 return None
         except Exception as e:

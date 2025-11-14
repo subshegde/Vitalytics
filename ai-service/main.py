@@ -117,6 +117,7 @@ async def detect_disease(request: DetectionRequest):
         return response
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -188,6 +189,7 @@ async def suggest(request: SuggestionRequest):
 
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -255,6 +257,7 @@ async def get_skin_health_nutrition(request: NutritionRequest):
     
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -301,6 +304,7 @@ async def search_nutrition_details(request: NutritionItemRequest):
     
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -352,6 +356,7 @@ async def get_diet_summary(request: DietSummaryRequest):
 
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -424,6 +429,7 @@ async def track_progression(request: ProgressionRequest):
     
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -483,6 +489,7 @@ async def get_full_summary(request: FullSummaryRequest):
     
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
@@ -514,6 +521,7 @@ async def get_images(user_id: str):
     
     except Exception as e:
         # Get the class name of the exception
+        print(f"Error: {str(e)}")
         error_type = type(e).__name__ 
         
         # Return a JSONResponse containing the raw exception details
