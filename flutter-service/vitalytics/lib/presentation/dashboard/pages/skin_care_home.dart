@@ -1,8 +1,12 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/data/models/discover_item.dart';
 import 'package:vitalytics/data/models/skin_care_tip_model.dart';
+import 'package:vitalytics/data/models/user/user.dart';
+import 'package:vitalytics/data/dao/user_dao.dart';
 import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
@@ -26,6 +30,8 @@ class HomeDashboardPage extends StatefulWidget {
 
 class _HomeDashboardPageState extends State<HomeDashboardPage> {
   int _selectedIndex = 0;
+  User? _loggedInUser;
+  final UserDao _userDao = UserDao();
 
   final List<SkinCareTip> _skinCareTips = [
     SkinCareTip(
@@ -69,6 +75,24 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadLoggedInUser();
+  }
+
+  // ---------------- LOAD LOGGED-IN USER -----------------
+  Future<void> _loadLoggedInUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt('logged_in_user_id');
+    if (userId != null) {
+      final user = await _userDao.getUserById(userId);
+      setState(() {
+        _loggedInUser = user;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primeGreen950,
@@ -80,19 +104,14 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             children: [
               _buildAppBar(context),
               const SizedBox(height: 24),
-
               _buildQuickActions(context),
               const SizedBox(height: 32),
-
               _buildSectionTitle("Skin Care Tips"),
               const SizedBox(height: 16),
-
               _buildSkinCareTipsList(context),
               const SizedBox(height: 32),
-
               _buildSectionTitle("Discover More"),
               const SizedBox(height: 16),
-
               _buildDiscoverGrid(context),
               const SizedBox(height: 24),
             ],
@@ -103,7 +122,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- APP BAR -----------------
-
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -111,20 +129,25 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
+              if (_loggedInUser != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfilePage(userId: _loggedInUser!.id ?? 0),
+                  ),
+                );
+              }
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 26,
-              backgroundImage: NetworkImage(
-                'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
-              ),
+              backgroundImage: _loggedInUser?.profilePicPath != null
+                  ? FileImage(File(_loggedInUser!.profilePicPath!))
+                  : const NetworkImage(
+                      'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
+                    ) as ImageProvider,
             ),
           ),
           const SizedBox(width: 12),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -133,18 +156,21 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                 style: TextStyle(color: primeTextDim, fontSize: 16),
               ),
               Text(
-                "Alex",
+                _loggedInUser?.username ?? "Guest",
                 style: TextStyle(
                   color: primeText,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (_loggedInUser?.email != null)
+                Text(
+                  _loggedInUser!.email!,
+                  style: TextStyle(color: primeTextDim, fontSize: 14),
+                ),
             ],
           ),
-
           const Spacer(),
-
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.notifications_none_outlined, size: 30),
@@ -156,7 +182,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- QUICK ACTIONS -----------------
-
   Widget _buildQuickActions(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -172,7 +197,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
               MaterialPageRoute(builder: (_) => const AnalysisPage()),
             ),
           ),
-
           _quickAction(
             context,
             icon: Icons.recommend_outlined,
@@ -182,29 +206,23 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
               MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
             ),
           ),
-
           _quickAction(
             context,
             icon: Icons.spa_outlined,
             label: "Nutritions",
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  NutritionScreen()),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NutritionScreen()),
+            ),
           ),
-
           _quickAction(
             context,
             icon: Icons.history_outlined,
             label: "Progress Tracking",
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) =>  ProgressScreen()),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProgressScreen()),
+            ),
           ),
         ],
       ),
@@ -231,7 +249,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- SECTION TITLE -----------------
-
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -247,7 +264,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- TIPS HORIZONTAL LIST -----------------
-
   Widget _buildSkinCareTipsList(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth * 0.65;
@@ -269,9 +285,8 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _tipCard(SkinCareTip tip, double width, double height) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
       },
       child: Container(
         width: width,
@@ -287,7 +302,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             fit: StackFit.expand,
             children: [
               Image.network(tip.imageUrl, fit: BoxFit.cover),
-
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -300,7 +314,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   ),
                 ),
               ),
-
               Positioned(
                 left: 16,
                 right: 16,
@@ -332,7 +345,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   }
 
   // ---------------- DISCOVER GRID -----------------
-
   Widget _buildDiscoverGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -354,9 +366,8 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _discoverCard(DiscoverItem item) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -369,7 +380,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             fit: StackFit.expand,
             children: [
               Image.network(item.imageUrl, fit: BoxFit.cover),
-
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -382,7 +392,6 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                   ),
                 ),
               ),
-
               Positioned(
                 left: 16,
                 bottom: 16,

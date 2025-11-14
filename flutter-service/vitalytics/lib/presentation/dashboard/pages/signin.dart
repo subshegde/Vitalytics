@@ -1,8 +1,12 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
+import 'package:vitalytics/data/dao/user_dao.dart';
+import 'package:vitalytics/data/models/user/user.dart';
 import 'package:vitalytics/presentation/dashboard/pages/signup.dart';
+import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,23 +16,67 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // State variable to track password visibility
   bool _isPasswordVisible = false;
 
-  // Controllers to manage the text inside the TextFields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Color constants from the image
-
   @override
   void dispose() {
-    // Clean up the controllers when the widget is removed from the widget tree
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  // -------------------------------
+  // COMPLETE LOGIN LOGIC
+  // -------------------------------
+  Future<void> _handleLogin() async {
+    final emailOrUsername = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (emailOrUsername.isEmpty || password.isEmpty) {
+      _showMessage("Please fill all fields");
+      return;
+    }
+
+    // Fetch user using DAO
+    User? user = await UserDao().getUserByEmailOrUsername(emailOrUsername);
+
+    if (user == null) {
+      _showMessage("User not found");
+      return;
+    }
+
+    // ---- PASSWORD MATCH CHECK ----
+    if (user.password != password) {
+      _showMessage("Incorrect password");
+      return;
+    }
+
+    // SUCCESS
+    _showMessage("Login successful!");
+    saveLoggedInUserId(user.id ?? 0, true);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeDashboardPage()),
+    );
+  }
+
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> saveLoggedInUserId(int userId, bool isLogin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('logged_in_user_id', userId);
+    await prefs.setBool('isLogin', isLogin);
+  }
+
+  // -------------------------------
+  // UI
+  // -------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,12 +88,10 @@ class _LoginPageState extends State<LoginPage> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
 
-                    // Logo Icon
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: primaryBlue.withOpacity(0.2),
@@ -57,7 +103,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Welcome Title
                     Text(
                       "Welcome Back",
                       textAlign: TextAlign.center,
@@ -69,7 +114,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
 
-                    // Subtitle
                     Text(
                       "Sign in to your account to continue.",
                       textAlign: TextAlign.center,
@@ -79,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 40),
 
-                    // --- Username/Email Field ---
+                    // EMAIL / USERNAME
                     _buildLabel("Username or Email"),
                     const SizedBox(height: 8),
                     TextField(
@@ -92,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // --- Password Field ---
+                    // PASSWORD
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [_buildLabel("Password")],
@@ -100,13 +144,10 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: _passwordController,
-                      // This is the dynamic part:
-                      // Toggle text visibility based on the _isPasswordVisible state
                       obscureText: !_isPasswordVisible,
                       decoration: _buildInputDecoration(
                         hintText: "Enter your password",
                         prefixIcon: Icons.lock_outline,
-                        // Suffix icon to toggle password visibility
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible
@@ -115,8 +156,6 @@ class _LoginPageState extends State<LoginPage> {
                             color: iconColor,
                           ),
                           onPressed: () {
-                            // This is the dynamic logic:
-                            // setState updates the UI when the variable changes
                             setState(() {
                               _isPasswordVisible = !_isPasswordVisible;
                             });
@@ -126,12 +165,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // --- Sign In Button ---
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue, // Blue background
-                        foregroundColor: Colors.white, // White text
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -177,7 +215,9 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Helper widget for building the text field labels
+  // -------------------------------
+  // UI Helpers
+  // -------------------------------
   Widget _buildLabel(String text) {
     return Text(
       text,
@@ -185,7 +225,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Helper method for building the text field decoration
   InputDecoration _buildInputDecoration({
     required String hintText,
     required IconData prefixIcon,
@@ -200,7 +239,7 @@ class _LoginPageState extends State<LoginPage> {
       hintStyle: const TextStyle(color: hintColor),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none, // No border
+        borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
     );
