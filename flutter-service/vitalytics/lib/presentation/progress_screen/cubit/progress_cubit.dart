@@ -1,58 +1,36 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../models/progress_entry.dart';
-import 'progress_state.dart';
+import 'package:bloc/bloc.dart';
+import 'package:vitalytics/presentation/progress_screen/cubit/progress_state.dart';
+import 'package:vitalytics/sl.dart';
+import 'package:vitalytics/core/network/dio_client.dart';
+import 'package:vitalytics/core/constants/api_endpoints.dart';
+import '../../../data/models/progression/progression_result.dart';
 
-class ProgressCubit extends Cubit<ProgressState> {
-  ProgressCubit() : super(ProgressLoading()) {
-    loadEntries();
-  }
 
-  void loadEntries() {
-    final data = [
-      ProgressEntry(
-        date: DateTime(2023, 10, 24),
-        severity: 8,
-        notes: "Started new cream.",
-        image: "assets/p1.png",
-      ),
-      ProgressEntry(
-        date: DateTime(2023, 10, 17),
-        severity: 6,
-        notes: "Felt less itchy.",
-        image: "assets/p2.png",
-      ),
-      ProgressEntry(
-        date: DateTime(2023, 10, 10),
-        severity: 5,
-        notes: "First entry.",
-        image: "assets/p3.png",
-      ),
-    ];
+class ProgressSummaryCubit extends Cubit<ProgressSummaryState> {
+  ProgressSummaryCubit() : super(ProgressSummaryInitial());
 
-    emit(ProgressLoaded(
-      allEntries: data,
-      filteredEntries: data,
-    ));
-  }
+  Future<void> fetchProgressSummary(int userId,String base64) async {
+    emit(ProgressSummaryLoading());
 
-  void filterRange(String days) {
-    final current = state as ProgressLoaded;
+    try {
+      final dio = sl<DioClient>();
+      print("userId$userId");
 
-    final now = DateTime.now();
-    final cutoff = now.subtract(Duration(days: int.parse(days)));
+      final response = await dio.post(
+        ApiEndpoints.progression,
+        data: {
+          "user_id":userId.toString(),
+          "image_base64": base64,
+          "query": ""
+        }
+      );
+      print("yesssss");
 
-    final filtered = current.allEntries
-        .where((e) => e.date.isAfter(cutoff))
-        .toList();
+      final summary = ProgressSummaryModel.fromJson(response.data);
 
-    emit(current.copyWith(
-      selectedRange: days,
-      filteredEntries: filtered,
-    ));
-  }
-
-  void switchView(bool timeline) {
-    final current = state as ProgressLoaded;
-    emit(current.copyWith(isTimelineView: timeline));
+      emit(ProgressSummaryLoaded(summary));
+    } catch (e) {
+      emit(ProgressSummaryError(e.toString()));
+    }
   }
 }

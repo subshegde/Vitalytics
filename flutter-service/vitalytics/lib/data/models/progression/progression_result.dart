@@ -1,18 +1,44 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class ProgressSummaryModel {
+  final String analysisDate;
+  final String overallChange;
+  final List<MetricTrackModel> metricsTracked;
+  final String visualNotes;
 
-part 'progression_result.freezed.dart';
-part 'progression_result.g.dart';
+  ProgressSummaryModel({
+    required this.analysisDate,
+    required this.overallChange,
+    required this.metricsTracked,
+    required this.visualNotes,
+  });
 
-@freezed
-abstract
-class ProgressionResult with _$ProgressionResult {
-  const factory ProgressionResult({
-    required String analysis_date,
-    required String status,
-    required String change_description,
-    required String suggested_adjustment,
-  }) = _ProgressionResult;
+  factory ProgressSummaryModel.fromJson(Map<String, dynamic> json) {
+    return ProgressSummaryModel(
+      analysisDate: json['analysis_date'] ?? '',
+      overallChange: json['overall_change'] ?? '',
+      metricsTracked: (json['metrics_tracked'] as List<dynamic>? ?? [])
+          .map((e) => MetricTrackModel.fromJson(e))
+          .toList(),
+      visualNotes: json['visual_notes'] ?? '',
+    );
+  }
+}
 
-  factory ProgressionResult.fromJson(Map<String, dynamic> json) =>
-      _$ProgressionResultFromJson(json);
+class MetricTrackModel {
+  final String metricName;
+  final String changeDescription;
+  final double confidenceScore;
+
+  MetricTrackModel({
+    required this.metricName,
+    required this.changeDescription,
+    required this.confidenceScore,
+  });
+
+  factory MetricTrackModel.fromJson(Map<String, dynamic> json) {
+    return MetricTrackModel(
+      metricName: json['metric_name'] ?? '',
+      changeDescription: json['change_description'] ?? '',
+      confidenceScore: json['confidence_score'] ?? 0,
+    );
+  }
 }

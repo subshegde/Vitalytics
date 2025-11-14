@@ -1,406 +1,402 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
+import 'cubit/get_image_state.dart';
+import 'cubit/get_images_cubit.dart';
 import 'cubit/progress_cubit.dart';
 import 'cubit/progress_state.dart';
 
-class ProgressScreen extends StatefulWidget {
-  const ProgressScreen({super.key});
+class FullProgressScreen extends StatelessWidget {
+  final int userId;
+  final String base64Image;
 
-  @override
-  State<ProgressScreen> createState() => _ProgressScreenState();
-}
-
-class _ProgressScreenState extends State<ProgressScreen>
-    with TickerProviderStateMixin {
-  late TabController _viewTabController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _viewTabController = TabController(length: 2, vsync: this);
-
-    _viewTabController.addListener(() {
-      final cubit = context.read<ProgressCubit>();
-
-      if (_viewTabController.index == 0) {
-        cubit.switchView(true); // Timeline
-      } else {
-        cubit.switchView(false); // Graph
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _viewTabController.dispose();
-    super.dispose();
-  }
+  const FullProgressScreen({
+    super.key,
+    required this.userId,
+    required this.base64Image,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ProgressCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+          ProgressSummaryCubit()..fetchProgressSummary(userId, base64Image),
+        ),
+        BlocProvider(
+          create: (_) => ProgressImagesCubit()..fetchProgressImages(userId),
+        ),
+      ],
+
       child: Scaffold(
         backgroundColor: const Color(0xFF0D1F17),
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: const Text(
-            "My Progress",
-            style: TextStyle(color: Colors.white),
-          ),
           centerTitle: true,
+          title: const Text("Full Progress",
+              style: TextStyle(color: Colors.white)),
         ),
 
-        body: BlocBuilder<ProgressCubit, ProgressState>(
-          builder: (context, state) {
-            if (state is ProgressLoading) {
-              return const Center(child: CircularProgressIndicator());
+        body: Stack(
+          children: [
+            _mainContent(),
+            _globalLoader(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // SINGLE GLOBAL LOADER
+  // ============================================================
+
+  Widget _globalLoader() {
+    return BlocBuilder<ProgressSummaryCubit, ProgressSummaryState>(
+      builder: (context, summaryState) {
+        return BlocBuilder<ProgressImagesCubit, ProgressImagesState>(
+          builder: (context, imagesState) {
+            final isLoading =
+                summaryState is ProgressSummaryLoading ||
+                    imagesState is ProgressImagesLoading;
+
+            if (isLoading) {
+              return Container(
+                color: Colors.black.withOpacity(0.6),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.greenAccent,
+                    strokeWidth: 4,
+                  ),
+                ),
+              );
             }
 
-            final data = state as ProgressLoaded;
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // MAIN CONTENT (ONLY AFTER BOTH LOAD SUCCESS)
+  // ============================================================
+
+  Widget _mainContent() {
+    return BlocBuilder<ProgressSummaryCubit, ProgressSummaryState>(
+      builder: (context, summaryState) {
+        return BlocBuilder<ProgressImagesCubit, ProgressImagesState>(
+          builder: (context, imagesState) {
+            // ERRORS
+            if (summaryState is ProgressSummaryError) {
+              return _error("Summary Error: ${summaryState.message}");
+            }
+            if (imagesState is ProgressImagesError) {
+              return _error("Images Error: ${imagesState.message}");
+            }
+
+            // If either is still idle/loading → hide UI
+            if (summaryState is! ProgressSummaryLoaded ||
+                imagesState is! ProgressImagesLoaded) {
+              return const SizedBox.shrink();
+            }
+
+            final summary = summaryState.summary;
+            final images = imagesState.data.images;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
-                  const Text(
-                    "Eczema - Left Arm",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      buildRangeChip(context, "1W", "7", data),
-                      buildRangeChip(context, "1M", "30", data),
-                      buildRangeChip(context, "6M", "180", data),
-                      buildRangeChip(context, "All", "9999", data),
-                    ],
-                  ),
+                  /// SUMMARY
+                  _title("Overall Change"),
+                  _card(summary.overallChange),
 
                   const SizedBox(height: 20),
 
-                  // TAB BAR (Timeline / Graph)
-                  Container(
-                    height: kToolbarHeight + 3,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green.shade800),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: TabBar(
-                      controller: _viewTabController,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      padding: const EdgeInsets.all(4),
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.green.shade800,
-                      ),
-                      labelStyle: Theme.of(context).textTheme.titleMedium,
-                      unselectedLabelStyle: Theme.of(
-                        context,
-                      ).textTheme.titleMedium,
-                      tabs: const [
-                        Tab(
-                          icon: Icon(Icons.timeline, size: 20),
-                          text: "Timeline",
-                        ),
-                        Tab(
-                          icon: Icon(Icons.show_chart, size: 20),
-                          text: "Graph",
-                        ),
-                      ],
-                    ),
-                  ),
+                  _title("Metrics Tracked"),
+                  _metrics(summary.metricsTracked),
 
                   const SizedBox(height: 20),
 
-                  // CONTENT BASED ON TAB
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: TabBarView(
-                      controller: _viewTabController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        buildTimelineView(data),
-                        buildGraphView(context, data),
-                      ],
-                    ),
-                  ),
+                  _title("Visual Notes"),
+                  _card(summary.visualNotes),
+
+                  const SizedBox(height: 30),
+
+                  /// IMAGES
+                  _title("Progress Images"),
+                  const SizedBox(height: 10),
+                  _progressImages(images),
+
+                  const SizedBox(height: 30),
+
+                  /// GRAPH
+                  _title("Confidence Score Trend"),
+                  const SizedBox(height: 10),
+                  _confidenceGraph(images),
                 ],
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // ERROR UI
+  // ============================================================
+
+  Widget _error(String msg) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          msg,
+          style: const TextStyle(
+            color: Colors.redAccent,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
-}
 
-Widget buildGraphView(BuildContext context, ProgressLoaded data) {
-  final sorted = [...data.filteredEntries]
-    ..sort((a, b) => a.date.compareTo(b.date));
+  // ============================================================
+  // TITLE
+  // ============================================================
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF16261E),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text("Metric:", style: TextStyle(color: Colors.white)),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade800,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    "Severity",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                buildRangeChip(context, "1W", "7", data),
-                buildRangeChip(context, "1M", "30", data),
-                buildRangeChip(context, "6M", "180", data),
-                buildRangeChip(context, "All", "9999", data),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // GRAPH
-            SizedBox(
-              height: 220,
-              child: LineChart(
-                LineChartData(
-                  minY: 0,
-                  maxY: 10,
-                  gridData: FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 2,
-                        reservedSize: 30,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            value.toInt().toString(),
-                            style: const TextStyle(color: Colors.white54),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          int index = value.toInt();
-                          if (index < 0 || index >= sorted.length) {
-                            return const SizedBox.shrink();
-                          }
-                          return Text(
-                            DateFormat("MMM d").format(sorted[index].date),
-                            style: const TextStyle(color: Colors.white54),
-                          );
-                        },
-                      ),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-
-                  lineBarsData: [
-                    LineChartBarData(
-                      isCurved: true,
-                      color: Colors.green,
-                      dotData: FlDotData(show: true),
-                      barWidth: 3,
-                      spots: List.generate(
-                        sorted.length,
-                        (i) =>
-                            FlSpot(i.toDouble(), sorted[i].severity.toDouble()),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+  Widget _title(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.greenAccent,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
       ),
+    );
+  }
 
-      const SizedBox(height: 20),
+  // ============================================================
+  // SIMPLE CARD
+  // ============================================================
 
-      buildPhotoLogSection(data),
-    ],
-  );
-}
-
-Widget buildRangeChip(
-  BuildContext context,
-  String label,
-  String days,
-  ProgressLoaded data,
-) {
-  bool selected = data.selectedRange == days;
-
-  return Padding(
-    padding: const EdgeInsets.only(right: 8),
-    child: GestureDetector(
-      onTap: () => context.read<ProgressCubit>().filterRange(days),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? Colors.green : Colors.green.shade900,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(label, style: const TextStyle(color: Colors.white)),
+  Widget _card(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _box(),
+      child: Text(
+        text.isEmpty ? "No data available." : text,
+        style: const TextStyle(color: Colors.white70),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget buildPhotoLogSection(ProgressLoaded data) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        "Photo Log",
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 12),
+  BoxDecoration _box() {
+    return BoxDecoration(
+      color: const Color(0xFF16261E),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.green.shade900),
+    );
+  }
 
-      SizedBox(
-        height: 150,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: data.filteredEntries.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
-          itemBuilder: (context, i) {
-            final entry = data.filteredEntries[i];
-            return Column(
+  // ============================================================
+  // METRICS
+  // ============================================================
+
+  Widget _metrics(List metrics) {
+    if (metrics.isEmpty) {
+      return _card("No metrics found.");
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _box(),
+      child: Column(
+        children: metrics.map((m) {
+          final percent = ((m.confidenceScore ?? 0) * 100).toInt();
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    entry.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 100,
-                        width: 150,
-
-                        color: Colors.green.shade900,
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.broken_image,
-                          color: Colors.white70,
-                          size: 30,
-                        ),
-                      );
-                    },
+                Text(
+                  m.metricName ?? "Unknown Metric",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
                 const SizedBox(height: 4),
+
                 Text(
-                  DateFormat("MMM dd").format(entry.date),
+                  m.changeDescription ?? "No description",
                   style: const TextStyle(color: Colors.white70),
                 ),
-              ],
-            );
-          },
-        ),
-      ),
-    ],
-  );
-}
 
-Widget buildTimelineView(ProgressLoaded data) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      buildPhotoLogSection(data),
-      const SizedBox(height: 20),
+                const SizedBox(height: 8),
 
-      Column(
-        children: data.filteredEntries.map((entry) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade900,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.chat, color: Colors.white),
+                LinearProgressIndicator(
+                  value: (m.confidenceScore ?? 0).toDouble(),
+                  backgroundColor: Colors.white12,
+                  color: Colors.greenAccent,
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Severity: ${entry.severity}/10",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      DateFormat("MMM dd, yyyy").format(entry.date),
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      entry.notes,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ],
+
+                const SizedBox(height: 4),
+
+                Text(
+                  "$percent%",
+                  style: const TextStyle(color: Colors.greenAccent),
                 ),
               ],
             ),
           );
         }).toList(),
       ),
-    ],
-  );
+    );
+  }
+
+  // ============================================================
+  // IMAGES
+  // ============================================================
+
+  Widget _progressImages(List images) {
+    if (images.isEmpty) {
+      return _card("No progress images found.");
+    }
+
+    return SizedBox(
+      height: 150,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+
+        itemBuilder: (_, index) {
+          final raw = images[index].base64Image?.trim() ?? "";
+
+          if (raw.isEmpty) {
+            return _brokenImage();
+          }
+
+          final clean = raw.contains(',')
+              ? raw.split(',').last
+              : raw;
+
+          Uint8List bytes;
+
+          try {
+            bytes = base64Decode(clean);
+          } catch (_) {
+            return _brokenImage();
+          }
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.memory(
+              bytes,
+              width: 150,
+              height: 150,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _brokenImage(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _brokenImage() {
+    return Container(
+      width: 150,
+      height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.red.withOpacity(0.25),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(Icons.broken_image, color: Colors.redAccent),
+    );
+  }
+
+  // ============================================================
+  // GRAPH
+  // ============================================================
+
+  Widget _confidenceGraph(List images) {
+    if (images.isEmpty) {
+      return _card("No graph data available.");
+    }
+
+    final spots = <FlSpot>[];
+
+    for (int i = 0; i < images.length; i++) {
+      final score = images[i].confidenceScore ?? 0.0;
+      spots.add(FlSpot(i.toDouble(), score));
+    }
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(12),
+      decoration: _box(),
+      child: LineChart(
+        LineChartData(
+          minY: 0,
+          maxY: 1,
+
+          lineBarsData: [
+            LineChartBarData(
+              isCurved: true,
+              color: Colors.greenAccent,
+              barWidth: 3,
+              dotData: FlDotData(show: true),
+              spots: spots,
+            ),
+          ],
+
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, _) =>
+                    Text("${(value * 100).toInt()}%",
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 12)),
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, _) {
+                  int index = value.toInt();
+                  if (index < 0 || index >= images.length) {
+                    return const SizedBox();
+                  }
+                  return Text("Img ${index + 1}",
+                      style: const TextStyle(
+                          color: Colors.white54, fontSize: 12));
+                },
+              ),
+            ),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+        ),
+      ),
+    );
+  }
 }

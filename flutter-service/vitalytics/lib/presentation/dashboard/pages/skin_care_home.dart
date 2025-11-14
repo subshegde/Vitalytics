@@ -303,16 +303,16 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
 
             const SizedBox(width: 16),
 
-            _quickAction(
-              context,
-              icon: Icons.history_outlined,
-              label: "Progress Tracking",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProgressScreen()),
-              ),
-            ),
-            const SizedBox(width: 16),
+            // _quickAction(
+            //   context,
+            //   icon: Icons.history_outlined,
+            //   label: "Progress Tracking",
+            //   onTap: () => Navigator.push(
+            //     context,
+            //     MaterialPageRoute(builder: (_) => FullProgressScreen(                    )),
+            //   ),
+            // ),
+            // const SizedBox(width: 16),
             _quickAction(
               context,
               icon: Icons.summarize,
