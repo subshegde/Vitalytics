@@ -6,7 +6,7 @@ class DetectionRequest(BaseModel):
     """Model for the output of the /detect-disease endpoint."""
 
     user_id: str
-    filename: str
+    image_base64: str
     query: str
 
 
@@ -43,7 +43,6 @@ class NutritionRequest(BaseModel):
 
 class NutritionItemRequest(BaseModel):
     name: str
-    type: str
     disease_type: str
     query: str
 
@@ -51,10 +50,23 @@ class NutritionItem(BaseModel):
     """Model for an individual nutrition item (e.g., a fruit or vegetable)."""
 
     name: str
-    type: str  # e.g., 'fruit', 'vegetable', 'supplement'
-    benefit_for_skin: str
-    key_nutrients: List[str]
+    benefit: str
+    source_foods: List[str]
+    image: str
 
+class KeyNutrient(BaseModel):
+    nutrient: str
+    amount: str
+
+class NutritionItemDetailed(BaseModel):
+    item_name: str
+    category: str
+    description: str
+    key_nutrients: List[KeyNutrient]
+
+class NutritionsResponse(BaseModel):
+    report_title: str
+    nutritions: List[NutritionItem]
 
 class DietSummaryRequest(BaseModel):
     """Model for the overall diet summary."""
@@ -63,28 +75,36 @@ class DietSummaryRequest(BaseModel):
     disease_type: str
     query: str
 
+
+class MacroBreakdown(BaseModel):
+    carbs: int
+    protein: int
+    fats: int
+
 class DietSummary(BaseModel):
     """Model for the overall diet summary."""
-
-    title: str
     summary_text: str
-    suggested_meals: List[dict]
+    macro_breakdown: MacroBreakdown
+    recommendations: List[str]
 
 class ProgressionRequest(BaseModel):
 
     user_id: str
-    filename1: str
-    filename2: str
-    curr_score: float
+    image_base64: str
     query: str
+
+class ProgressionMetric(BaseModel):
+    metric_name: str
+    change_description: str
+    confidence_score: float
 
 class ProgressionResult(BaseModel):
     """Model for the progression tracking result."""
 
-    analysis_date: str
-    status: str  # e.g., 'Improving', 'Worsening', 'Stable'
-    change_description: str
-    suggested_adjustment: str
+    analysis_date: Optional[str]
+    overall_change: Optional[str]
+    metrics_tracked: Optional[List[ProgressionMetric]]
+    visual_notes: Optional[str]
 
 class FullSummaryRequest(BaseModel):
     """Model for the final full summary."""
@@ -92,10 +112,23 @@ class FullSummaryRequest(BaseModel):
     user_id: str
     query: str
 
+class FullSummaryKeyMetric(BaseModel):
+    diet_score: float
+    progression_trend: str
+
+class FullSUmmarySection(BaseModel):
+    section_title: str
+    brief_summary: str
+    recommendation: str
+
 class FullSummary(BaseModel):
     """Model for the final full summary."""
 
-    last_analysis_date: str
-    disease_history: List[str]
-    current_status: str
-    recommendations_snapshot: dict  # Holds latest medicine, homeopathy, and nutrition
+    analysis_date: str
+    overall_status: str
+    key_metrics: Optional[FullSummaryKeyMetric]
+    sections: Optional[List[FullSUmmarySection]]
+
+class ResponseImages(BaseModel):
+
+    images: Optional[List[dict]]

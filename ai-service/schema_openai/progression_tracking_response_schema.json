@@ -1,0 +1,54 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "ProgressionAnalysisResult",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "overall_change": {
+                    "type": "string",
+                    "description": "A concluding statement on the progression observed."
+                },
+                "metrics_tracked": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "metric_name": {
+                                "type": "string",
+                                "description": "The aspect being compared (e.g., 'Estimated Body Fat', 'Muscle Gain')."
+                            },
+                            "change_description": {
+                                "type": "string",
+                                "description": "The detected change (e.g., 'Decreased', 'Increased')."
+                            },
+                            "confidence_score": {
+                                "type": "number",
+                                "description": "Confidence level (0.0 to 1.0) of the detection.",
+                                "minimum": 0,
+                                "maximum": 1
+                            }
+                        },
+                        "required": [
+                            "metric_name",
+                            "change_description",
+                            "confidence_score"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "visual_notes": {
+                    "type": "string",
+                    "description": "Specific, detailed visual observations from the comparison."
+                }
+            },
+            "required": [
+                "overall_change",
+                "metrics_tracked",
+                "visual_notes"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

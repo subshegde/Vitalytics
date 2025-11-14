@@ -1,47 +1,40 @@
 {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "SkinHealthNutritionReport",
-        "strict": true,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "report_title": {
-                    "type": "string",
-                    "description": "Title of the nutritional report for skin health."
-                },
-                "nutrients": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {
-                                "type": "string"
-                            },
-                            "benefit": {
-                                "type": "string",
-                                "description": "How this nutrient supports skin health (e.g., 'Antioxidant protection')."
-                            },
-                            "source_foods": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "description": "Top food sources for this nutrient."
-                            }
+    "type": "OBJECT",
+    "properties": {
+        "report_title": {
+            "type": "STRING",
+            "description": "Title of the nutritional report for skin health."
+        },
+        "nutrients": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {
+                        "type": "STRING"
+                    },
+                    "benefit": {
+                        "type": "STRING",
+                        "description": "How this nutrient supports skin health (e.g., 'Antioxidant protection')."
+                    },
+                    "source_foods": {
+                        "type": "ARRAY",
+                        "items": {
+                            "type": "STRING"
                         },
-                        "required": [
-                            "name",
-                            "benefit",
-                            "source_foods"
-                        ]
+                        "description": "Top food sources for this nutrient."
                     }
-                }
-            },
-            "required": [
-                "report_title",
-                "nutrients"
-            ]
+                },
+                "required": [
+                    "name",
+                    "benefit",
+                    "source_foods"
+                ]
+            }
         }
-    }
+    },
+    "required": [
+        "report_title",
+        "nutrients"
+    ]
 }

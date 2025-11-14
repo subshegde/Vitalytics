@@ -1,0 +1,73 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "ComprehensiveHealthSummary",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "overall_status": {
+                    "type": "string",
+                    "description": "General well-being status (e.g., 'Stable with areas for improvement')."
+                },
+                "key_metrics": {
+                    "type": "object",
+                    "properties": {
+                        "diet_score": {
+                            "type": "number",
+                            "description": "Score/rating for diet quality (0-10).",
+                            "minimum": 0,
+                            "maximum": 10
+                        },
+                        "progression_trend": {
+                            "type": "string",
+                            "enum": [
+                                "Positive",
+                                "Negative",
+                                "Neutral"
+                            ],
+                            "description": "Trend from the last progression analysis."
+                        }
+                    },
+                    "required": [
+                        "diet_score",
+                        "progression_trend"
+                    ],
+                    "additionalProperties": false
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "section_title": {
+                                "type": "string"
+                            },
+                            "brief_summary": {
+                                "type": "string",
+                                "description": "A 1-2 sentence summary of this health section (e.g., 'Diet is balanced but low in fiber')."
+                            },
+                            "recommendation": {
+                                "type": "string",
+                                "description": "The most important takeaway/action for this section."
+                            }
+                        },
+                        "required": [
+                            "section_title",
+                            "brief_summary",
+                            "recommendation"
+                        ],
+                        "additionalProperties": false
+                    }
+                }
+            },
+            "required": [
+                "report_date",
+                "overall_status",
+                "key_metrics",
+                "sections"
+            ],
+            "additionalProperties": false
+        }
+    }
+}
