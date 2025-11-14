@@ -1,8 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
+import 'package:vitalytics/presentation/dashboard/cubit/recomendation_cubit.dart';
+import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/presentation/dashboard/pages/signin.dart';
 import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
 import 'package:vitalytics/sl.dart';
@@ -108,7 +111,13 @@ class VitalyticsApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.white),
         ),
       ),
-      home: isLogin ? const HomeDashboardPage() : const LoginPage(),
+      home: MultiBlocProvider(providers: [
+        BlocProvider<RecommendationCubit>(
+          create: (_) => RecommendationCubit(),
+          child: RecommendationsScreen(),
+        )
+
+      ], child: isLogin ? const HomeDashboardPage() : const LoginPage()),
       debugShowCheckedModeBanner: false,
     );
   }

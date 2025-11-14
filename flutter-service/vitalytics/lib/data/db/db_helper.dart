@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DBHelper {
   static const _dbName = 'vitalytics.db';
-  static const _dbVersion = 2; // VERSION UPDATED ⚠️
+  static const _dbVersion = 3; // BUMP VERSION ⚠️
 
   DBHelper._privateConstructor();
   static final DBHelper instance = DBHelper._privateConstructor();
@@ -31,6 +31,9 @@ class DBHelper {
     );
   }
 
+  // --------------------------------------------------------------------------
+  // ON CREATE — runs only first time
+  // --------------------------------------------------------------------------
   Future<void> _onCreate(Database db, int version) async {
     // Users table
     await db.execute('''
@@ -44,16 +47,15 @@ class DBHelper {
       )
     ''');
 
-    // Default user insert
     await db.insert('users', {
       'username': 'Test User',
       'email': 'test@example.com',
       'password': '123456',
       'bio': 'This is a test user',
-      'profile_pic_path': null
+      'profile_pic_path': null,
     });
 
-    // Disease table
+    // Disease detection table (WITH created_at)
     await db.execute('''
       CREATE TABLE disease_detection (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,25 +64,21 @@ class DBHelper {
         confidence_score REAL NOT NULL,
         description TEXT NOT NULL,
         precautionary_steps TEXT NOT NULL,
+        created_at TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )
     ''');
   }
 
-  // Handle DB upgrades
+  // --------------------------------------------------------------------------
+  // ON UPGRADE — apply schema migrations
+  // --------------------------------------------------------------------------
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('''
-        CREATE TABLE disease_detection (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id INTEGER NOT NULL,
-          detected_disease TEXT NOT NULL,
-          confidence_score REAL NOT NULL,
-          description TEXT NOT NULL,
-          precautionary_steps TEXT NOT NULL,
-          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-        )
-      ''');
+    if (oldVersion < 3) {
+      // Add created_at if it doesn’t exist
+      await db.execute(
+        "ALTER TABLE disease_detection ADD COLUMN created_at TEXT DEFAULT ''",
+      );
     }
   }
 }

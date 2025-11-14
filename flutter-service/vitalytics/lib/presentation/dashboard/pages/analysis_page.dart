@@ -11,6 +11,8 @@ import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_state.dart
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/sl.dart';
 
+import '../cubit/recomendation_cubit.dart';
+
 const Color primeGreen950 = Color(0xFF0D1F12);
 const Color primeGreen900 = Color(0xFF14331D);
 const Color primeGreen700 = Color(0xFF1F5A33);
@@ -191,12 +193,13 @@ class _AnalysisPageState extends State<AnalysisPage>
                         backgroundColor: primeGreen700,
                       ),
                     );
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RecommendationsScreen(),
-                      ),
-                    );
+                    Navigator.push(context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider(
+                            create: (_) => RecommendationCubit(),
+                            child: const RecommendationsScreen(),
+                          ),
+                        ));
                   }
                 },
                 builder: (context, state) {

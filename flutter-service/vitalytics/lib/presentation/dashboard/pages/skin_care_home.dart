@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/data/models/discover_item.dart';
 import 'package:vitalytics/data/models/skin_care_tip_model.dart';
@@ -13,6 +14,8 @@ import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 
 import '../../nutrition_screen/nutrition_screen.dart';
 import '../../progress_screen/progress_screen.dart';
+import '../cubit/hemeo_cub.dart';
+import '../cubit/recomendation_cubit.dart';
 
 // THEME COLORS
 const Color primeGreen950 = Color(0xFF0a2e26);
@@ -201,10 +204,16 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             context,
             icon: Icons.recommend_outlined,
             label: "Recommendation",
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
-            ),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(
+                  builder: (_) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider(create: (_) => RecommendationCubit()),
+                      BlocProvider(create: (_) => HomeopathyRecommendationCubit()),
+                    ],
+                    child: const RecommendationsScreen(),
+                  ),
+                )),
           ),
           _quickAction(
             context,

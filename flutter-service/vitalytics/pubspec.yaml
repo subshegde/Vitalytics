@@ -51,6 +51,7 @@ dependencies:
   shared_preferences: ^2.5.3
   get_it: ^9.0.5
   dartz: ^0.10.1
+  image: ^4.5.4
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true

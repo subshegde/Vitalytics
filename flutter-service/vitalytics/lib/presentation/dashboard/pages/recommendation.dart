@@ -1,13 +1,19 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
 import 'package:vitalytics/data/db/disease_detection_dao.dart';
 import 'package:vitalytics/data/models/disease_detection/disease_detection_model.dart';
+import 'package:vitalytics/data/models/suggestion/suggestion_result.dart';
 import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart'
     hide primeGreen900, primeAccent, primeText, primeGreen950;
 import 'package:vitalytics/sl.dart';
+
+import '../cubit/hemeo_cub.dart';
+import '../cubit/recomend_state.dart';
+import '../cubit/recomendation_cubit.dart';
 
 class RecommendationsScreen extends StatefulWidget {
   const RecommendationsScreen({super.key});
@@ -17,9 +23,9 @@ class RecommendationsScreen extends StatefulWidget {
 }
 
 class _RecommendationsScreenState extends State<RecommendationsScreen> {
-  final Widget pharmaMedicines = _buildPharmaceuticalMedicines();
+
   final Widget homeSolutions = _buildHomeAndNaturalSolutions();
-  final Widget homeopathicRemedies = _buildHomeopathicRemedies();
+
 
   @override
   void initState() {
@@ -52,7 +58,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 2,
       child: Scaffold(
         backgroundColor: primeGreen950,
 
@@ -77,65 +83,70 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
         body: NestedScrollView(
           headerSliverBuilder: (context, inner) {
             return [
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: primeGreen900,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primeGreen700.withOpacity(0.4)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Last Detection Result",
-                      style: TextStyle(
-                        color: primeText,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Disease: ${lastDetection!.detected_disease}",
-                      style: const TextStyle(color: primeTextDim, fontSize: 16),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Confidence: ${(lastDetection!.confidence_score * 100).toStringAsFixed(1)}%",
-                      style: const TextStyle(color: primeTextDim, fontSize: 16),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Description: ${lastDetection!.description}",
-                      style: const TextStyle(color: primeTextDim, fontSize: 16),
-                    ),
-                    const SizedBox(height: 4),
-                    if (lastDetection!.precautionary_steps.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: primeGreen900,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: primeGreen700.withOpacity(0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       const Text(
-                        "Precautionary Steps:",
+                        "Last Detection Result",
                         style: TextStyle(
                           color: primeText,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Disease: ${lastDetection?.detected_disease ?? ""}",
+                        style: const TextStyle(color: primeTextDim, fontSize: 16),
                       ),
                       const SizedBox(height: 4),
-                      ...lastDetection!.precautionary_steps.map(
-                        (step) => Text(
-                          "• $step",
-                          style: const TextStyle(
-                            color: primeTextDim,
-                            fontSize: 14,
+                      Text(
+                        "Confidence: ${(lastDetection?.confidence_score ?? 0 * 100).toStringAsFixed(1)}%",
+                        style: const TextStyle(color: primeTextDim, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Description: ${lastDetection?.description ?? ""}",
+                        style: const TextStyle(color: primeTextDim, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // FIX PRECaution List
+                      if ((lastDetection?.precautionary_steps ?? []).isNotEmpty) ...[
+                        const Text(
+                          "Precautionary Steps:",
+                          style: TextStyle(
+                            color: primeText,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        ...(lastDetection?.precautionary_steps ?? []).map(
+                              (step) => Text(
+                            "• $step",
+                            style: const TextStyle(
+                              color: primeTextDim,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ]
                     ],
-                  ],
+                  ),
                 ),
               ),
+
               // -----------------------------------------
               // TOP HEADER (Disclaimer + Nutrition Button)
               // -----------------------------------------
@@ -232,10 +243,10 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                     indicatorWeight: 3,
                     overlayColor: MaterialStateProperty.all(Colors.transparent),
                     tabs: const [
-                      Tab(text: 'All'),
+
                       Tab(text: 'Medicines'),
                       Tab(text: 'Homeopathy'),
-                      Tab(text: 'Home Solutions'),
+
                     ],
                   ),
                 ),
@@ -248,31 +259,123 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
           // ---------------------------------------------------------
           body: TabBarView(
             children: [
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                children: [
-                  pharmaMedicines,
-                  const SizedBox(height: 16),
-                  homeSolutions,
-                  const SizedBox(height: 16),
-                  homeopathicRemedies,
-                ],
+
+              BlocConsumer<RecommendationCubit, RecommendationState>(
+                listener: (_, state) {},
+                builder: (context, state) {
+
+                  if (state is RecommendationLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (state is RecommendationLoaded) {
+                    final medicines = state.data.items;
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                      child: buildPharmaceuticalMedicines(
+                        items: medicines,
+                        onGenerate: () async {
+                          final dao = DiseaseDetectionDao();
+                          final prefs = sl<SharedPreferences>();
+                          final userId = prefs.getInt('logged_in_user_id') ?? 0;
+
+                          final diseases = await dao.getDiseasesByUser(userId);
+                          final lastDisease = diseases.isNotEmpty
+                              ? diseases.last.detected_disease
+                              : "";
+
+                          context
+                              .read<RecommendationCubit>()
+                              .fetchRecommendations(userId, lastDisease, "medicine");
+                        },
+                      ),
+                    );
+                  }
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                    child: buildPharmaceuticalMedicines(
+                      items: [],
+                      onGenerate: () async {
+                        final prefs = sl<SharedPreferences>();
+                        final userId = prefs.getInt('logged_in_user_id') ?? 0;
+                        final dao = DiseaseDetectionDao();
+                        final diseases = await dao.getDiseasesByUser(userId);
+
+                        final diseaseName = diseases.isNotEmpty
+                            ? diseases.last.detected_disease
+                            : "";
+
+                        context
+                            .read<RecommendationCubit>()
+                            .fetchRecommendations(userId, diseaseName, "medicine");
+                      },
+                    ),
+                  );
+                },
               ),
 
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                children: [pharmaMedicines],
-              ),
 
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                children: [homeopathicRemedies],
-              ),
+              BlocConsumer<HomeopathyRecommendationCubit, RecommendationState>(
+                listener: (_, __) {},
+                builder: (context, state) {
 
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                children: [homeSolutions],
-              ),
+                  if (state is RecommendationLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (state is RecommendationLoaded) {
+                    final items = state.data.items;
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                      child: buildHomeopathicSection(
+                        items: items,
+                        onGenerate: () async {
+                          final prefs = sl<SharedPreferences>();
+                          final userId = prefs.getInt('logged_in_user_id') ?? 0;
+
+                          final dao = DiseaseDetectionDao();
+                          final diseases = await dao.getDiseasesByUser(userId);
+                          final diseaseName =
+                          diseases.isNotEmpty ? diseases.last.detected_disease : "";
+
+                          context
+                              .read<HomeopathyRecommendationCubit>()
+                              .fetchHomeopathyRecommendations(userId, diseaseName);
+                        },
+                      ),
+                    );
+                  }
+
+                  // INITIAL + ERROR CASE
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                    child: buildHomeopathicSection(
+                      items: [],
+                      onGenerate: () async {
+                        final prefs = sl<SharedPreferences>();
+                        final userId = prefs.getInt('logged_in_user_id') ?? 0;
+
+                        final dao = DiseaseDetectionDao();
+                        final diseases = await dao.getDiseasesByUser(userId);
+                        final diseaseName =
+                        diseases.isNotEmpty ? diseases.last.detected_disease : "";
+
+                        context
+                            .read<HomeopathyRecommendationCubit>()
+                            .fetchHomeopathyRecommendations(userId, diseaseName);
+                      },
+                    ),
+                  );
+                },
+              )
+
+
+
+
+
             ],
           ),
         ),
@@ -283,24 +386,49 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
   // ------------------------------
   // SECTION BUILDERS
   // ------------------------------
-  static Widget _buildPharmaceuticalMedicines() {
+  static Widget buildPharmaceuticalMedicines({
+    required List<Map<String, dynamic>> items,
+    required VoidCallback onGenerate,
+  }) {
     return _StyledExpansionTile(
-      title: 'Pharmaceutical Medicines',
+      title: 'Medicines',
       initiallyExpanded: true,
       children: [
-        _RecommendationItem(
-          icon: Icons.medication_liquid_outlined,
-          title: 'Hydrocortisone Cream',
-          subtitle: 'Topical cream for reducing inflammation and itching.',
-        ),
-        _RecommendationItem(
-          icon: Icons.medical_services_outlined,
-          title: 'Antihistamines',
-          subtitle: 'Oral medication to help control itching.',
-        ),
+        if (items.isEmpty)
+          Column(
+            children: [
+              const Text(
+                "No recommendations available",
+                style: TextStyle(color: primeTextDim, fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: onGenerate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primeAccent,
+                  foregroundColor: primeGreen950,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("Generate Recommendations"),
+              ),
+            ],
+          )
+        else
+          ...items.map((mapItem) {
+            return _RecommendationItem(
+              icon: Icons.medication_liquid_outlined,
+              title: mapItem["name"] ?? "",
+              subtitle:
+              "${mapItem["dosage"] ?? ""}\n\n${mapItem["note"] ?? ""}",
+            );
+          }).toList(),
       ],
     );
   }
+
+
+
 
   static Widget _buildHomeAndNaturalSolutions() {
     return _StyledExpansionTile(
@@ -320,18 +448,49 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
     );
   }
 
-  static Widget _buildHomeopathicRemedies() {
+  static Widget buildHomeopathicSection({
+    required List<Map<String, dynamic>> items,
+    required VoidCallback onGenerate,
+  }) {
     return _StyledExpansionTile(
       title: 'Homeopathic Remedies',
+      initiallyExpanded: true,
       children: [
-        _RecommendationItem(
-          icon: Icons.grass_outlined,
-          title: 'Sulphur',
-          subtitle: 'Often recommended for chronic cases with intense itching.',
-        ),
+        if (items.isEmpty)
+          Column(
+            children: [
+              const Text(
+                "No recommendations available",
+                style: TextStyle(color: primeTextDim, fontSize: 14),
+              ),
+              SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: onGenerate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primeAccent,
+                  foregroundColor: primeGreen950,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Generate Recommendations"),
+              ),
+            ],
+          )
+        else
+          ...items.map((mapItem) {
+            return _RecommendationItem(
+              icon: Icons.grass_outlined,
+              title: mapItem["name"] ?? "",
+              subtitle:
+              "${mapItem["dosage"] ?? ""}\n\n${mapItem["note"] ?? ""}",
+            );
+          }).toList(),
       ],
     );
   }
+
 }
 
 // ============================================================================
