@@ -6,18 +6,6 @@
         "schema": {
             "type": "object",
             "properties": {
-                "analysis_date": {
-                    "type": "string",
-                    "description": "Date the analysis was performed."
-                },
-                "start_image_date": {
-                    "type": "string",
-                    "description": "Date associated with the first image."
-                },
-                "end_image_date": {
-                    "type": "string",
-                    "description": "Date associated with the second image."
-                },
                 "overall_change": {
                     "type": "string",
                     "description": "A concluding statement on the progression observed."
@@ -46,7 +34,8 @@
                             "metric_name",
                             "change_description",
                             "confidence_score"
-                        ]
+                        ],
+                        "additionalProperties": false
                     }
                 },
                 "visual_notes": {
@@ -58,7 +47,8 @@
                 "overall_change",
                 "metrics_tracked",
                 "visual_notes"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

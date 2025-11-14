@@ -6,10 +6,6 @@
         "schema": {
             "type": "object",
             "properties": {
-                "report_date": {
-                    "type": "string",
-                    "description": "The date the full summary was generated."
-                },
                 "overall_status": {
                     "type": "string",
                     "description": "General well-being status (e.g., 'Stable with areas for improvement')."
@@ -36,7 +32,8 @@
                     "required": [
                         "diet_score",
                         "progression_trend"
-                    ]
+                    ],
+                    "additionalProperties": false
                 },
                 "sections": {
                     "type": "array",
@@ -59,7 +56,8 @@
                             "section_title",
                             "brief_summary",
                             "recommendation"
-                        ]
+                        ],
+                        "additionalProperties": false
                     }
                 }
             },
@@ -68,7 +66,8 @@
                 "overall_status",
                 "key_metrics",
                 "sections"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

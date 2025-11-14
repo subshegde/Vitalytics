@@ -94,13 +94,18 @@ class ProgressionRequest(BaseModel):
     curr_score: float
     query: str
 
+class ProgressionMetric(BaseModel):
+    metric_name: str
+    change_description: str
+    confidence_score: float
+
 class ProgressionResult(BaseModel):
     """Model for the progression tracking result."""
 
     analysis_date: str
-    status: str  # e.g., 'Improving', 'Worsening', 'Stable'
-    change_description: str
-    suggested_adjustment: str
+    overall_change: str
+    metrics_tracked: ProgressionMetric
+    visual_notes: str
 
 class FullSummaryRequest(BaseModel):
     """Model for the final full summary."""
@@ -108,10 +113,19 @@ class FullSummaryRequest(BaseModel):
     user_id: str
     query: str
 
+class FullSummaryKeyMetric(BaseModel):
+    diet_score: int
+    progression_trend: str
+
+class FullSUmmarySection(BaseModel):
+    section_title: str
+    brief_summary: str
+    recommendation: str
+
 class FullSummary(BaseModel):
     """Model for the final full summary."""
 
-    last_analysis_date: str
-    disease_history: List[str]
-    current_status: str
-    recommendations_snapshot: dict  # Holds latest medicine, homeopathy, and nutrition
+    analysis_date: str
+    overall_status: str
+    key_metrics: FullSummaryKeyMetric
+    sections: List[FullSUmmarySection]
