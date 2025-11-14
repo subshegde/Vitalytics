@@ -40,9 +40,10 @@ Suggestions based on skin health:
 ---
 
 ### 📈 **4. Disease Progress Tracking**
-- Timeline view of each detection
-- Graph-based progress tracking (powered by **fl_chart**)
-- Shows improvement or worsening over time  
+* Timeline view of each detection
+* Graph-based progress tracking (powered by **fl_chart**)
+* Shows improvement or worsening over time
+* **Full summary export** as a PDF report
 
 ---
 
