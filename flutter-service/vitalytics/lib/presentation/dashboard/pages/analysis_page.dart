@@ -8,6 +8,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_cubit.dart';
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_state.dart';
+import 'package:vitalytics/presentation/dashboard/cubit/hemeo_cub.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/sl.dart';
 
@@ -193,13 +194,21 @@ class _AnalysisPageState extends State<AnalysisPage>
                         backgroundColor: primeGreen700,
                       ),
                     );
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                          builder: (_) => BlocProvider(
-                            create: (_) => RecommendationCubit(),
-                            child: const RecommendationsScreen(),
-                          ),
-                        ));
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider(create: (_) => RecommendationCubit()),
+                            BlocProvider(
+                              create: (_) => HomeopathyRecommendationCubit(),
+                            ),
+                          ],
+                          child: const RecommendationsScreen(),
+                        ),
+                      ),
+                    );
                   }
                 },
                 builder: (context, state) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:vitalytics/presentation/nutrition_screen/nutrition_details.dart';
 import 'cubit/nutrition_cubit.dart';
 import 'cubit/nutrition_state.dart';
 class NutritionScreen extends StatelessWidget {
@@ -92,126 +93,141 @@ class NutritionScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final item = state.filteredFoods[index];
 
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF16261E),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          // This Column was causing the overflow
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              
-                              // --- START FIX ---
-
-                              // Image Section
-                              // 1. Wrapped image in Expanded
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    topRight: Radius.circular(16),
-                                  ),
-                                  child: CachedNetworkImage(
-                                    imageUrl: item.image ?? "",
-                                    // 2. Removed fixed height
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, _) => Container(
-                                      // height: 150, // Removed
-                                      color: Colors.grey.shade900,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    errorWidget: (context, error, stackTrace) =>
-                                        Container(
-                                      // height: 150, // Removed
-                                      color: Colors.grey.shade800,
-                                      child: const Icon(Icons.broken_image,
-                                          color: Colors.grey),
-                                    ),
-                                  ),
+                        return GestureDetector(
+                          onTap: (){
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NutritionDetailsPage(
+                                  name: item.name ?? "Unknown",
+                                  diseaseType: diseaseType,
+                                  query: "",
                                 ),
                               ),
-
-                              // Text Section
-                              // 3. Wrapped text area in Expanded
-                              Expanded(
-                                flex: 1, // Give text 1/3 of the space
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Food Name
-                                      Text(
-                                        item.name ?? "Unnamed Food",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 5),
-
-                                      // Benefits
-                                      Text(
-                                        item.benefit ?? "",
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.greenAccent,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-
-                                      if (item.sourceFoods != null)
-                                        Expanded(
-                                          child: SingleChildScrollView(
-                                            child: Wrap(
-                                              spacing: 6,
-                                              runSpacing: 4,
-                                              children: item.sourceFoods!
-                                                  .map(
-                                                    (src) => Container(
-                                                      padding:
-                                                          const EdgeInsets
-                                                              .symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors
-                                                            .green.shade700,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                10),
-                                                      ),
-                                                      child: Text(
-                                                        src,
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 10,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                  .toList(),
-                                            ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF16261E),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            // This Column was causing the overflow
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                
+                                // --- START FIX ---
+                          
+                                // Image Section
+                                // 1. Wrapped image in Expanded
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    ),
+                                    child: CachedNetworkImage(
+                                      imageUrl: item.image ?? "",
+                                      // 2. Removed fixed height
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, _) => Container(
+                                        // height: 150, // Removed
+                                        color: Colors.grey.shade900,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Colors.transparent,
+                                            strokeWidth: 2,
                                           ),
                                         ),
-                                    ],
+                                      ),
+                                      errorWidget: (context, error, stackTrace) =>
+                                          Container(
+                                        // height: 150, // Removed
+                                        color: Colors.grey.shade800,
+                                        child: const Icon(Icons.broken_image,
+                                            color: Colors.grey),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              
-                            ],
+                          
+                                // Text Section
+                                // 3. Wrapped text area in Expanded
+                                Expanded(
+                                  flex: 1, // Give text 1/3 of the space
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Food Name
+                                        Text(
+                                          item.name ?? "Unnamed Food",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                          
+                                        // Benefits
+                                        Text(
+                                          item.benefit ?? "",
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.greenAccent,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                          
+                                        if (item.sourceFoods != null)
+                                          Expanded(
+                                            child: SingleChildScrollView(
+                                              child: Wrap(
+                                                spacing: 6,
+                                                runSpacing: 4,
+                                                children: item.sourceFoods!
+                                                    .map(
+                                                      (src) => Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors
+                                                              .green.shade700,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                  10),
+                                                        ),
+                                                        child: Text(
+                                                          src,
+                                                          style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 10,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                    .toList(),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                
+                              ],
+                            ),
                           ),
                         );
                       },
