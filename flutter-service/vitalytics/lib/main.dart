@@ -8,6 +8,7 @@ import 'package:vitalytics/presentation/dashboard/cubit/recomendation_cubit.dart
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/presentation/dashboard/pages/signin.dart';
 import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
+import 'package:vitalytics/presentation/progress_screen/cubit/progress_cubit.dart';
 import 'package:vitalytics/sl.dart';
 
 void main() async {
@@ -115,6 +116,10 @@ class VitalyticsApp extends StatelessWidget {
         BlocProvider<RecommendationCubit>(
           create: (_) => RecommendationCubit(),
           child: RecommendationsScreen(),
+        ),
+        BlocProvider<ProgressSummaryCubit>(
+          create: (_) => ProgressSummaryCubit(),
+
         )
 
       ], child: isLogin ? const HomeDashboardPage() : const LoginPage()),

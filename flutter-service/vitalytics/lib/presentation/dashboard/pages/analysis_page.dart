@@ -1,16 +1,21 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image/image.dart' as img;
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_cubit.dart';
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_state.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
-import 'package:vitalytics/sl.dart';
 
+import 'package:vitalytics/sl.dart';
+import '../../progress_screen/cubit/progress_cubit.dart';
+import '../../progress_screen/progress_screen.dart';
 import '../cubit/recomendation_cubit.dart';
 
 const Color primeGreen950 = Color(0xFF0D1F12);
@@ -32,19 +37,29 @@ class _AnalysisPageState extends State<AnalysisPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  int? userId;
+
   @override
   void initState() {
     super.initState();
     _loadLoggedInUser();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
+
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+
     _animationController.forward();
+  }
+
+  Future<void> _loadLoggedInUser() async {
+    final prefs = sl<SharedPreferences>();
+    userId = prefs.getInt('logged_in_user_id');
   }
 
   @override
@@ -76,6 +91,8 @@ class _AnalysisPageState extends State<AnalysisPage>
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // CAMERA
                 ListTile(
                   leading: const Icon(Icons.camera_alt, color: primeAccent),
                   title: const Text(
@@ -87,10 +104,12 @@ class _AnalysisPageState extends State<AnalysisPage>
                     final picked = await ImagePicker().pickImage(
                       source: ImageSource.camera,
                     );
+
                     if (picked != null) {
                       context.read<AnalysisCubit>().selectImage(
                         File(picked.path),
                       );
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -103,6 +122,8 @@ class _AnalysisPageState extends State<AnalysisPage>
                     }
                   },
                 ),
+
+                // GALLERY
                 ListTile(
                   leading: const Icon(Icons.photo_library, color: primeAccent),
                   title: const Text(
@@ -114,10 +135,12 @@ class _AnalysisPageState extends State<AnalysisPage>
                     final picked = await ImagePicker().pickImage(
                       source: ImageSource.gallery,
                     );
+
                     if (picked != null) {
                       context.read<AnalysisCubit>().selectImage(
                         File(picked.path),
                       );
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -136,12 +159,6 @@ class _AnalysisPageState extends State<AnalysisPage>
         );
       },
     );
-  }
-
-  int? userId;
-  Future<void> _loadLoggedInUser() async {
-    final prefs = sl<SharedPreferences>();
-    userId = prefs.getInt('logged_in_user_id');
   }
 
   @override
@@ -166,6 +183,7 @@ class _AnalysisPageState extends State<AnalysisPage>
           ),
           centerTitle: true,
         ),
+
         body: FadeTransition(
           opacity: _fadeAnimation,
           child: SafeArea(
@@ -193,15 +211,19 @@ class _AnalysisPageState extends State<AnalysisPage>
                         backgroundColor: primeGreen700,
                       ),
                     );
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                          builder: (_) => BlocProvider(
-                            create: (_) => RecommendationCubit(),
-                            child: const RecommendationsScreen(),
-                          ),
-                        ));
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider(
+                          create: (_) => RecommendationCubit(),
+                          child: const RecommendationsScreen(),
+                        ),
+                      ),
+                    );
                   }
                 },
+
                 builder: (context, state) {
                   File? image;
                   if (state is AnalysisImageSelected) image = state.image;
@@ -210,6 +232,8 @@ class _AnalysisPageState extends State<AnalysisPage>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 20),
+
+                      // UPLOAD BOX
                       DottedBorder(
                         color: primeAccent.withOpacity(0.7),
                         strokeWidth: 2,
@@ -235,6 +259,7 @@ class _AnalysisPageState extends State<AnalysisPage>
                                 ),
                               ),
                               const SizedBox(height: 12),
+
                               const Text(
                                 'For best results, use a clear, well-lit image.',
                                 style: TextStyle(color: Colors.white70),
@@ -242,7 +267,6 @@ class _AnalysisPageState extends State<AnalysisPage>
                               ),
                               const SizedBox(height: 24),
 
-                              // SHOW SELECTED IMAGE
                               if (image != null) ...[
                                 Stack(
                                   children: [
@@ -255,6 +279,7 @@ class _AnalysisPageState extends State<AnalysisPage>
                                         fit: BoxFit.cover,
                                       ),
                                     ),
+
                                     Positioned(
                                       top: 10,
                                       right: 10,
@@ -318,34 +343,89 @@ class _AnalysisPageState extends State<AnalysisPage>
 
                       const Spacer(),
 
+                      // -------------- ANALYZE + PROGRESS BUTTONS --------------
                       if (state is AnalysisImageSelected ||
                           state is AnalysisLoading)
-                        Column(
+                        Row(
                           children: [
-                            if (state is AnalysisLoading)
-                              const LinearProgressIndicator(),
-                            const SizedBox(height: 8),
-                            ElevatedButton(
-                              onPressed: state is AnalysisLoading
-                                  ? null
-                                  : () => context
-                                        .read<AnalysisCubit>()
-                                        .uploadImage(userId: userId.toString()),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primeGreen600,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 32,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                "Analyze",
-                                style: TextStyle(color: primeText),
+                            // ANALYZE BUTTON
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  if (state is AnalysisLoading)
+                                    const LinearProgressIndicator(),
+                                  const SizedBox(height: 8),
+
+                                  ElevatedButton(
+                                    onPressed: state is AnalysisLoading
+                                        ? null
+                                        : () => context
+                                              .read<AnalysisCubit>()
+                                              .uploadImage(
+                                                userId: userId.toString(),
+                                              ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primeGreen600,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "Analyze",
+                                      style: TextStyle(color: primeText),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+
+                            const SizedBox(width: 12),
+
+                            // PROGRESS BUTTON
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final file = (state is AnalysisImageSelected) ? state.image : null;
+
+                                  if (file == null) return;
+
+                                  final bytes = await file.readAsBytes();
+                                  final decoded = img.decodeImage(bytes);
+                                  final compressed = img.encodeJpg(decoded!, quality: 70);
+
+                                  final base64Image = base64Encode(compressed);
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FullProgressScreen(
+                                        userId: userId!,
+                                        base64Image: base64Image,   // <-- pass base64 to screen
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primeAccent,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Progress",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+
+
                           ],
                         ),
 
@@ -362,7 +442,7 @@ class _AnalysisPageState extends State<AnalysisPage>
                           ),
                         ),
                         child: const Text(
-                          'This is not a medical diagnosis. Please consult a healthcare professional for an accurate assessment.',
+                          'This is not a medical diagnosis. Please consult a healthcare professional.',
                           style: TextStyle(color: Colors.white70, height: 1.4),
                           textAlign: TextAlign.center,
                         ),

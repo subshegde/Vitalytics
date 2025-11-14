@@ -12,6 +12,7 @@ import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 
+import '../../../sl.dart';
 import '../../nutrition_screen/nutrition_screen.dart';
 import '../../progress_screen/progress_screen.dart';
 import '../cubit/hemeo_cub.dart';
@@ -146,8 +147,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
               backgroundImage: _loggedInUser?.profilePicPath != null
                   ? FileImage(File(_loggedInUser!.profilePicPath!))
                   : const NetworkImage(
-                      'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
-                    ) as ImageProvider,
+                          'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
+                        )
+                        as ImageProvider,
             ),
           ),
           const SizedBox(width: 12),
@@ -204,16 +206,20 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             context,
             icon: Icons.recommend_outlined,
             label: "Recommendation",
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(
-                  builder: (_) => MultiBlocProvider(
-                    providers: [
-                      BlocProvider(create: (_) => RecommendationCubit()),
-                      BlocProvider(create: (_) => HomeopathyRecommendationCubit()),
-                    ],
-                    child: const RecommendationsScreen(),
-                  ),
-                )),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider(create: (_) => RecommendationCubit()),
+                    BlocProvider(
+                      create: (_) => HomeopathyRecommendationCubit(),
+                    ),
+                  ],
+                  child: const RecommendationsScreen(),
+                ),
+              ),
+            ),
           ),
           _quickAction(
             context,
@@ -228,10 +234,17 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             context,
             icon: Icons.history_outlined,
             label: "Progress Tracking",
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ProgressScreen()),
-            ),
+            onTap: () {
+              final prefs = sl<SharedPreferences>();
+              final userId = prefs.getInt('logged_in_user_id');
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FullProgressScreen(userId: userId ?? 0, base64Image: '',),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -294,8 +307,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _tipCard(SkinCareTip tip, double width, double height) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
       },
       child: Container(
         width: width,
