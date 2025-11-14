@@ -1,0 +1,44 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "SuggestionResult",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "suggestion_type": {
+                    "type": "string",
+                    "enum": [
+                        "Allopathic Medicine"
+                    ]
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "dosage": {
+                                "type": "string"
+                            },
+                            "note": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "dosage",
+                            "note"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "suggestion_type",
+                "items"
+            ]
+        }
+    }
+}
