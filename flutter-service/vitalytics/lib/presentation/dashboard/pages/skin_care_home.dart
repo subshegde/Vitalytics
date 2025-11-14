@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vitalytics/data/db/disease_detection_dao.dart';
 import 'package:vitalytics/data/models/discover_item.dart';
 import 'package:vitalytics/data/models/skin_care_tip_model.dart';
 import 'package:vitalytics/data/models/user/user.dart';
@@ -11,6 +12,7 @@ import 'package:vitalytics/data/dao/user_dao.dart';
 import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
+import 'package:vitalytics/sl.dart';
 
 import '../../nutrition_screen/nutrition_screen.dart';
 import '../../progress_screen/progress_screen.dart';
@@ -146,8 +148,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
               backgroundImage: _loggedInUser?.profilePicPath != null
                   ? FileImage(File(_loggedInUser!.profilePicPath!))
                   : const NetworkImage(
-                      'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
-                    ) as ImageProvider,
+                          'https://placehold.co/100x100/A8C4B8/1E3923.png?text=Alex',
+                        )
+                        as ImageProvider,
             ),
           ),
           const SizedBox(width: 12),
@@ -204,25 +207,45 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
             context,
             icon: Icons.recommend_outlined,
             label: "Recommendation",
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(
-                  builder: (_) => MultiBlocProvider(
-                    providers: [
-                      BlocProvider(create: (_) => RecommendationCubit()),
-                      BlocProvider(create: (_) => HomeopathyRecommendationCubit()),
-                    ],
-                    child: const RecommendationsScreen(),
-                  ),
-                )),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider(create: (_) => RecommendationCubit()),
+                    BlocProvider(
+                      create: (_) => HomeopathyRecommendationCubit(),
+                    ),
+                  ],
+                  child: const RecommendationsScreen(),
+                ),
+              ),
+            ),
           ),
+
           _quickAction(
             context,
             icon: Icons.spa_outlined,
             label: "Nutritions",
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => NutritionScreen()),
-            ),
+            onTap: () async {
+              final prefs = sl<SharedPreferences>();
+              final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+              final dao = DiseaseDetectionDao();
+              final diseases = await dao.getDiseasesByUser(loggedUserId);
+
+              final diseaseName = diseases.isNotEmpty
+                  ? diseases.last.detected_disease
+                  : "";
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NutritionScreen(
+                    userId: loggedUserId,
+                    diseaseType: diseaseName,
+                  ),
+                ),
+              );
+            },
           ),
           _quickAction(
             context,
@@ -294,8 +317,9 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _tipCard(SkinCareTip tip, double width, double height) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
       },
       child: Container(
         width: width,

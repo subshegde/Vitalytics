@@ -21,7 +21,6 @@ class AnalysisCubit extends Cubit<AnalysisState> {
     emit(AnalysisImageSelected(image));
   }
 
-
   Future<void> uploadImage({required String userId}) async {
     final currentState = state;
     if (currentState is! AnalysisImageSelected) return;
@@ -36,11 +35,7 @@ class AnalysisCubit extends Cubit<AnalysisState> {
 
       final compressed = img.encodeJpg(decoded!, quality: 70);
 
-
       final base64Image = base64Encode(compressed);
-
-
-
 
       final data = {
         "user_id": userId,
@@ -62,11 +57,11 @@ class AnalysisCubit extends Cubit<AnalysisState> {
         // Convert API response to model
         final disease = DiseaseDetectionModel(
           detected_disease: responseData['detected_disease'] ?? '',
-          confidence_score:
-          (responseData['confidence_score'] ?? 0).toDouble(),
+          confidence_score: (responseData['confidence_score'] ?? 0).toDouble(),
           description: responseData['description'] ?? '',
-          precautionary_steps:
-          List<String>.from(responseData['precautionary_steps'] ?? []),
+          precautionary_steps: List<String>.from(
+            responseData['precautionary_steps'] ?? [],
+          ),
         );
 
         // Save to DB
@@ -77,8 +72,11 @@ class AnalysisCubit extends Cubit<AnalysisState> {
 
         emit(AnalysisUploaded(responseData));
       } else {
-        emit(AnalysisError(
-            response.data?['message'] ?? 'Unexpected server response'));
+        emit(
+          AnalysisError(
+            response.data?['message'] ?? 'Unexpected server response',
+          ),
+        );
       }
     } on DioException catch (e) {
       emit(
@@ -91,7 +89,6 @@ class AnalysisCubit extends Cubit<AnalysisState> {
       emit(AnalysisError(e.toString()));
     }
   }
-
 
   void removeImage() {
     emit(AnalysisInitial());

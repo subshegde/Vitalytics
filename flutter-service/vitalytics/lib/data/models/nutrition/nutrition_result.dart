@@ -1,17 +1,50 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class NutritionModel {
+  String? reportTitle;
+  List<Nutritions>? nutritions;
 
-part 'nutrition_result.freezed.dart';
-part 'nutrition_result.g.dart';
+  NutritionModel({this.reportTitle, this.nutritions});
 
-@freezed
-abstract class NutritionResult with _$NutritionResult {
-  const factory NutritionResult({
-    required String name,
-    required String type,
-    required String disease_type,
-    required String query,
-  }) = _NutritionResult;
+  NutritionModel.fromJson(Map<String, dynamic> json) {
+    reportTitle = json['report_title'];
+    if (json['nutritions'] != null) {
+      nutritions = <Nutritions>[];
+      json['nutritions'].forEach((v) {
+        nutritions!.add(new Nutritions.fromJson(v));
+      });
+    }
+  }
 
-  factory NutritionResult.fromJson(Map<String, dynamic> json) =>
-      _$NutritionResultFromJson(json);
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['report_title'] = this.reportTitle;
+    if (this.nutritions != null) {
+      data['nutritions'] = this.nutritions!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class Nutritions {
+  String? name;
+  String? benefit;
+  List<String>? sourceFoods;
+  String? image;
+
+  Nutritions({this.name, this.benefit, this.sourceFoods, this.image});
+
+  Nutritions.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    benefit = json['benefit'];
+    image = json['image'];
+    sourceFoods = json['source_foods'].cast<String>();
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['benefit'] = this.benefit;
+    data['image'] = this.image;
+    data['source_foods'] = this.sourceFoods;
+    return data;
+  }
 }
