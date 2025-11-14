@@ -1,0 +1,47 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "SkinHealthNutritionReport",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "report_title": {
+                    "type": "string",
+                    "description": "Title of the nutritional report for skin health."
+                },
+                "nutrients": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "benefit": {
+                                "type": "string",
+                                "description": "How this nutrient supports skin health (e.g., 'Antioxidant protection')."
+                            },
+                            "source_foods": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Top food sources for this nutrient."
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "benefit",
+                            "source_foods"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "report_title",
+                "nutrients"
+            ]
+        }
+    }
+}
