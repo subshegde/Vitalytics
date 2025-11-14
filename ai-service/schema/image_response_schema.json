@@ -31,7 +31,8 @@
                 "confidence_score",
                 "description",
                 "precautionary_steps"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

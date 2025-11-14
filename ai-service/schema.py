@@ -43,7 +43,6 @@ class NutritionRequest(BaseModel):
 
 class NutritionItemRequest(BaseModel):
     name: str
-    type: str
     disease_type: str
     query: str
 
@@ -51,10 +50,12 @@ class NutritionItem(BaseModel):
     """Model for an individual nutrition item (e.g., a fruit or vegetable)."""
 
     name: str
-    type: str  # e.g., 'fruit', 'vegetable', 'supplement'
-    benefit_for_skin: str
-    key_nutrients: List[str]
+    benefit: str
+    source_foods: List[str]
 
+class NutritionsResponse(BaseModel):
+    report_title: str
+    nutritions: List[NutritionItem]
 
 class DietSummaryRequest(BaseModel):
     """Model for the overall diet summary."""

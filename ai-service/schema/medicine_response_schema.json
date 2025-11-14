@@ -31,14 +31,16 @@
                             "name",
                             "dosage",
                             "note"
-                        ]
+                        ],
+                        "additionalProperties": false
                     }
                 }
             },
             "required": [
                 "suggestion_type",
                 "items"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

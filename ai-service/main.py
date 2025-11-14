@@ -7,8 +7,10 @@ from schema import (
     SuggestionRequest,
     SuggestionResult,
     NutritionRequest,
+    NutritionsResponse,
     NutritionItemRequest,
     NutritionItem,
+    NutritionItemDetailed,
     DietSummaryRequest,
     DietSummary,
     ProgressionRequest,
@@ -57,7 +59,12 @@ async def detect_disease(request: DetectionRequest):
     filename = request_dict["filename"]
     query = request_dict["query"]
     request_payload = create_image_payload(IMAGE_PROMPT, query, [filename], IMAGE_RESPONSE_SCHEMA)
+    
+    # print("Image input payload: ", request_payload)
     response = call_llm(request_payload)
+    response = json.loads(response)
+
+    # print("Response: ", response)
 
     user_id = request_dict["user_id"]
     if(not DB.get(user_id)):
@@ -80,6 +87,7 @@ async def detect_disease(request: DetectionRequest):
         ),
     )
     DB[user_id]["disease_detected"] = response
+    # print(f"DB[{user_id}]", DB[user_id])
     return response
 
 
@@ -107,7 +115,12 @@ async def suggest(request: SuggestionRequest):
     system_prompt = system_prompt.format(DISEASE_TYPE=disease_type)
 
     request_payload = create_text_payload(system_prompt, query, response_format)
+    print("Suggestion input payload: ", request_payload)
+    
     response = call_llm(request_payload)
+    response = json.loads(response)
+
+    print("Response: ", response)
 
     suggestions = response.get("items", [{
             "name": "Hydrocortisone Cream (0.5%)",
@@ -132,7 +145,7 @@ async def suggest(request: SuggestionRequest):
 
 ## 3. /api/skin-health-neutrion
 @app.post(
-    "/api/skin-health-neutrion", response_model=List[NutritionItem], tags=["Nutrition"]
+    "/api/skin-health-neutrion", response_model=NutritionsResponse, tags=["Nutrition"]
 )
 async def get_skin_health_nutrition(request: NutritionRequest):
     global DB
@@ -148,25 +161,35 @@ async def get_skin_health_nutrition(request: NutritionRequest):
     system_prompt = NUTRITIONS_PROMPT.format(DISEASE_TYPE=disease_type)
 
     request_payload = create_text_payload(system_prompt, query, NUTRITIONS_RESPONSE_SCHEMA)
+    print("Suggestion input payload: ", request_payload)
+    
     response = call_llm(request_payload)
+    response = json.loads(response)
+
+    print("Response: ", response)
 
     user_id = request_dict["user_id"]
     if(not DB.get(user_id)):
         DB[user_id] = DEFAULT_USER
     
-    response = [NutritionItem(
-            name="Avocado",
-            type="fruit",
-            benefit_for_skin="Rich in healthy fats, which are essential for skin barrier function.",
-            key_nutrients=["Vitamin E", "Vitamin C", "Healthy Monounsaturated Fats"],
-        )]
+    nutrition_list = []
+    for nutrition in response["nutrients"]:
+        nutrition_list.append(NutritionItem(
+            name=nutrition.get("name"),
+            benefit=nutrition.get("name"),
+            source_foods=nutrition.get("source_foods")
+        ))
     
+    response = NutritionsResponse(
+        report_title=response["report_title"],
+        nutritions=nutrition_list
+    )
     DB[user_id]["nutritions"] = response
     return response
 
 
 ## 4. /api/search
-@app.post("/api/search", response_model=NutritionItem, tags=["Nutrition"])
+@app.post("/api/search", response_model=NutritionItemDetailed, tags=["Nutrition"])
 async def search_nutrition_details(request: NutritionItemRequest):
     """
     Searches for detailed information on a specific nutrition item.
@@ -182,6 +205,7 @@ async def search_nutrition_details(request: NutritionItemRequest):
 
     request_payload = create_text_payload(system_prompt, query, DETAILED_NUTRITION_RESPONSE_SCHEMA)
     response = call_llm(request_payload)
+    response = json.loads(response)
 
     return NutritionItem(
         name="Avocado",

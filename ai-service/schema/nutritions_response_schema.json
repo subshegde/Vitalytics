@@ -34,14 +34,16 @@
                             "name",
                             "benefit",
                             "source_foods"
-                        ]
+                        ],
+                        "additionalProperties": false
                     }
                 }
             },
             "required": [
                 "report_title",
                 "nutrients"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }
