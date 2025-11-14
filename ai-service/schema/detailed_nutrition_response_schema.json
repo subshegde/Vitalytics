@@ -42,7 +42,8 @@
                         "required": [
                             "nutrient",
                             "amount"
-                        ]
+                        ],
+            "additionalProperties": false
                     }
                 },
                 "health_benefits": {
@@ -58,7 +59,8 @@
                 "category",
                 "description",
                 "key_nutrients"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

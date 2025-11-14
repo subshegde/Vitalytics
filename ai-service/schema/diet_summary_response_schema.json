@@ -36,7 +36,8 @@
                         "carbs",
                         "protein",
                         "fats"
-                    ]
+                    ],
+                "additionalProperties": false
                 },
                 "recommendations": {
                     "type": "array",
@@ -50,7 +51,8 @@
                 "summary_text",
                 "macro_breakdown",
                 "recommendations"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }

@@ -251,26 +251,24 @@ async def search_nutrition_details(request: NutritionItemRequest):
     # ⚠️ Placeholder: Logic needs to query a certified nutrition database.
     request_dict = request.model_dump()
     name = request_dict["name"]
-    type_ = request_dict["type"]
     disease_type = request_dict["disease_type"]
     query = request_dict["query"]
 
-    system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, TYPE=type_, DISEASE_TYPE=disease_type)
+    system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, DISEASE_TYPE=disease_type)
 
     request_payload = create_text_payload(system_prompt, query, DETAILED_NUTRITION_RESPONSE_SCHEMA)
+
+    print(f"Detailed Nutrition input payload: ", request_payload)
     response = call_llm(request_payload)
     response = json.loads(response)
 
-    return NutritionItem(
-        name="Avocado",
-        type="fruit",
-        benefit_for_skin="Rich in healthy fats, which are essential for skin barrier function. They also contain compounds that may protect your skin from sun damage.",
-        key_nutrients=[
-            "Vitamin E",
-            "Vitamin C",
-            "Potassium",
-            "Oleic Acid (Monounsaturated Fat)",
-        ],
+    print("Response: ", response)
+
+    return NutritionItemDetailed(
+        item_name=response['item_name'],
+        category=response['category'],
+        description=response['description'],
+        key_nutrients=response['key_nutrients']
     )
 
 ## 5. /api/diet-summary
@@ -289,25 +287,18 @@ async def get_diet_summary(request: DietSummaryRequest):
 
     request_payload = create_text_payload(system_prompt, query, DIET_SUMMARY_RESPONSE_SCHEMA)
     response = call_llm(request_payload)
+    response = json.loads(response)
 
-    title = f"Anti-Inflammatory Diet Summary for {disease_type}"
-    summary_text = "Focus on foods that reduce inflammation. This includes colorful fruits, vegetables, lean proteins, and healthy fats while reducing processed foods, sugar, and alcohol."
-
-    suggested_meals = [
-        {"meal": "Breakfast", "item": "Oatmeal with berries and flaxseed."},
-        {"meal": "Lunch", "item": "Salmon salad with a side of mixed greens."},
-        {
-            "meal": "Dinner",
-            "item": "Chicken breast with steamed broccoli and sweet potato.",
-        },
-    ]
+    print("Response: ", response)
 
     user_id = request_dict["user_id"]
     if(not DB.get(user_id)):
         DB[user_id] = DEFAULT_USER
 
     response =  DietSummary(
-        title=title, summary_text=summary_text, suggested_meals=suggested_meals
+        summary_text=response.get("summary_text"), 
+        macro_breakdown=response.get("macro_breakdown"), 
+        recommendations=response.get("recommendations")
     )
 
     DB[user_id]["diet_summary"] = response
