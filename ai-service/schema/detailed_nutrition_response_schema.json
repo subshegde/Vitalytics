@@ -1,66 +1,57 @@
 {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "FoodDetailResult",
-        "strict": true,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "item_name": {
-                    "type": "string",
-                    "description": "The name of the fruit, vegetable, or nutrient searched."
-                },
-                "category": {
-                    "type": "string",
-                    "enum": [
-                        "Fruit",
-                        "Vegetable",
-                        "Nutrient"
-                    ]
-                },
-                "description": {
-                    "type": "string",
-                    "description": "A comprehensive summary of the item."
-                },
-                "key_nutrients": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "nutrient": {
-                                "type": "string"
-                            },
-                            "amount": {
-                                "type": "string",
-                                "description": "The measured amount per serving/100g."
-                            },
-                            "daily_value_percent": {
-                                "type": "number",
-                                "description": "Percentage of Daily Value (DV)."
-                            }
-                        },
-                        "required": [
-                            "nutrient",
-                            "amount"
-                        ],
-            "additionalProperties": false
+    "type": "OBJECT",
+    "properties": {
+        "item_name": {
+            "type": "STRING",
+            "description": "The name of the fruit, vegetable, or nutrient searched."
+        },
+        "category": {
+            "type": "STRING",
+            "enum": [
+                "Fruit",
+                "Vegetable",
+                "Nutrient"
+            ]
+        },
+        "description": {
+            "type": "STRING",
+            "description": "A comprehensive summary of the item."
+        },
+        "key_nutrients": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "nutrient": {
+                        "type": "STRING"
+                    },
+                    "amount": {
+                        "type": "STRING",
+                        "description": "The measured amount per serving/100g."
+                    },
+                    "daily_value_percent": {
+                        "type": "NUMBER",
+                        "description": "Percentage of Daily Value (DV)."
                     }
                 },
-                "health_benefits": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "description": "A list of associated health benefits."
-                }
+                "required": [
+                    "nutrient",
+                    "amount"
+                ]
+            }
+        },
+        "health_benefits": {
+            "type": "ARRAY",
+            "items": {
+                "type": "STRING"
             },
-            "required": [
-                "item_name",
-                "category",
-                "description",
-                "key_nutrients"
-            ],
-            "additionalProperties": false
+            "description": "A list of associated health benefits."
         }
-    }
+    },
+    "required": [
+        "item_name",
+        "category",
+        "description",
+        "key_nutrients"
+    ]
 }

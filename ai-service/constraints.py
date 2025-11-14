@@ -36,11 +36,12 @@ TEXT_INPUT_FORMAT = {
 }
 
 DEFAULT_USER = {
-        "disease_type":"", 
-        "suggestion_medicine":"", 
-        "suggestion_homeopathy":"", 
-        "nutritions":"", 
-        "progression_tracking":"", 
-        "diet_summary":"",
-        "full_summary": "",
+        "disease_type": None, 
+        "suggestion_medicine": None, 
+        "suggestion_homeopathy":None, 
+        "suggestion_nutritions":None, 
+        "progression_tracking":None, 
+        "diet_summary":None,
+        "full_summary": None,
+        "images": []
 }

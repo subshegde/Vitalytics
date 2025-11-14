@@ -19,13 +19,21 @@ from schema import (
     ProgressionResult,
     FullSummaryRequest,
     FullSummary,
+    ResponseImages,
 )
-from llm import (
-    call_llm, 
-    create_image_payload, 
-    create_text_payload, 
-    get_current_date_and_time
+# from llm_open_ai import (
+#     call_llm_openai, 
+#     create_text_payload, 
+#     create_image_payload
+# )
+
+from llm_gemini import (
+    call_llm_gemini,
+    create_text_payload_gemini,
+    create_vision_payload_gemini
 )
+
+from utils import get_current_date_and_time, load_image
 
 from dependency import (
     DETAILED_NUTRITION_RESPONSE_SCHEMA,
@@ -64,20 +72,24 @@ async def detect_disease(request: DetectionRequest):
     global DB
     try:
         request_dict = request.model_dump()
-        filename = request_dict["filename"]
+        image_base64 = request_dict["image_base64"]
+        if ".jpeg" in image_base64 or ".jpg" in image_base64 or ".png" in image_base64:
+            image_base64 = load_image(image_base64)
         query = request_dict["query"]
-        request_payload = create_image_payload(IMAGE_PROMPT, query, [filename], IMAGE_RESPONSE_SCHEMA)
-        
-        # print("Image input payload: ", request_payload)
-        response = call_llm(request_payload)
-        response = json.loads(response)
-
-        # print("Response: ", response)
-
         user_id = request_dict["user_id"]
         if(not DB.get(user_id)):
             DB[user_id] = DEFAULT_USER
+        elif DB[user_id]["disease_detected"]:
+            return DB[user_id]["disease_detected"]
+
+        request_payload = create_vision_payload_gemini(IMAGE_PROMPT, query, [image_base64], IMAGE_RESPONSE_SCHEMA)
         
+        print("Image input payload: ", request_payload)
+        response = call_llm_gemini(request_payload)
+        response = json.loads(response)
+
+        print("Response: ", response)
+
         response = DetectionResult(
             detected_disease=response.get("detected_disease", "Azyma"),
             confidence_score=response.get("confidence_score", 0.6),
@@ -95,6 +107,10 @@ async def detect_disease(request: DetectionRequest):
             ),
         )
         DB[user_id]["disease_detected"] = response
+        DB[user_id]['images'].append({
+            "image": image_base64,
+            "confidence_score": response.confidence_score
+        })
         # print(f"DB[{user_id}]", DB[user_id])
         return response
     except Exception as e:
@@ -135,12 +151,20 @@ async def suggest(request: SuggestionRequest):
             system_prompt = HOMEOPATHY_PROMPT
             response_format = HOMEOPATHY_RESPONSE_SCHEMA
 
+        user_id = request_dict["user_id"]
+        if(not DB.get(user_id)):
+            DB[user_id] = DEFAULT_USER
+        elif suggestion_type == "medicine" and DB[user_id]["suggestion_medicine"]:
+            return DB[user_id]["suggestion_medicine"]
+        elif suggestion_type == "homeopathy" and DB[user_id]["suggestion_homeopathy"]:
+            return DB[user_id]["suggestion_homeopathy"]
+
         system_prompt = system_prompt.format(DISEASE_TYPE=disease_type)
 
-        request_payload = create_text_payload(system_prompt, query, response_format)
+        request_payload = create_text_payload_gemini(system_prompt, query, response_format)
         print("Suggestion input payload: ", request_payload)
         
-        response = call_llm(request_payload)
+        response = call_llm_gemini(request_payload)
         response = json.loads(response)
 
         print("Response: ", response)
@@ -151,11 +175,6 @@ async def suggest(request: SuggestionRequest):
                 "note": "Low-potency topical steroid.",
             }])
 
-        user_id = request_dict["user_id"]
-        if(not DB.get(user_id)):
-            DB[user_id] = DEFAULT_USER
-
-        
         response = SuggestionResult(suggestion_type=suggestion_type, items=suggestions)
 
         if (suggestion_type == "medicine"):
@@ -196,21 +215,22 @@ async def get_skin_health_nutrition(request: NutritionRequest):
         request_dict = request.model_dump()
         disease_type = request_dict["disease_type"]
         query = request_dict["query"]
+        user_id = request_dict["user_id"]
+        if(not DB.get(user_id)):
+            DB[user_id] = DEFAULT_USER
+        elif DB[user_id]["suggestion_nutritions"]:
+            return DB[user_id]["suggestion_nutritions"]
 
         system_prompt = NUTRITIONS_PROMPT.format(DISEASE_TYPE=disease_type)
 
-        request_payload = create_text_payload(system_prompt, query, NUTRITIONS_RESPONSE_SCHEMA)
+        request_payload = create_text_payload_gemini(system_prompt, query, NUTRITIONS_RESPONSE_SCHEMA)
         print("Suggestion input payload: ", request_payload)
         
-        response = call_llm(request_payload)
+        response = call_llm_gemini(request_payload)
         response = json.loads(response)
 
         print("Response: ", response)
 
-        user_id = request_dict["user_id"]
-        if(not DB.get(user_id)):
-            DB[user_id] = DEFAULT_USER
-        
         nutrition_list = []
         for nutrition in response["nutrients"]:
             nutrition_list.append(NutritionItem(
@@ -223,7 +243,7 @@ async def get_skin_health_nutrition(request: NutritionRequest):
             report_title=response["report_title"],
             nutritions=nutrition_list
         )
-        DB[user_id]["nutritions"] = response
+        DB[user_id]["suggestion_nutritions"] = response
         return response
     
     except Exception as e:
@@ -249,27 +269,43 @@ async def search_nutrition_details(request: NutritionItemRequest):
     Searches for detailed information on a specific nutrition item.
     """
     # ⚠️ Placeholder: Logic needs to query a certified nutrition database.
-    request_dict = request.model_dump()
-    name = request_dict["name"]
-    disease_type = request_dict["disease_type"]
-    query = request_dict["query"]
+    try:
+        request_dict = request.model_dump()
+        name = request_dict["name"]
+        disease_type = request_dict["disease_type"]
+        query = request_dict["query"]
 
-    system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, DISEASE_TYPE=disease_type)
+        system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, DISEASE_TYPE=disease_type)
 
-    request_payload = create_text_payload(system_prompt, query, DETAILED_NUTRITION_RESPONSE_SCHEMA)
+        request_payload = create_text_payload_gemini(system_prompt, query, DETAILED_NUTRITION_RESPONSE_SCHEMA)
 
-    print(f"Detailed Nutrition input payload: ", request_payload)
-    response = call_llm(request_payload)
-    response = json.loads(response)
+        print(f"Detailed Nutrition input payload: ", request_payload)
+        response = call_llm_gemini(request_payload)
+        response = json.loads(response)
 
-    print("Response: ", response)
+        print("Response: ", response)
 
-    return NutritionItemDetailed(
-        item_name=response['item_name'],
-        category=response['category'],
-        description=response['description'],
-        key_nutrients=response['key_nutrients']
-    )
+        return NutritionItemDetailed(
+            item_name=response['item_name'],
+            category=response['category'],
+            description=response['description'],
+            key_nutrients=response['key_nutrients']
+        )
+    
+    except Exception as e:
+        # Get the class name of the exception
+        error_type = type(e).__name__ 
+        
+        # Return a JSONResponse containing the raw exception details
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,  # Using 400 for generic client error
+            content={
+                "status": "error",
+                "type": error_type,
+                "message": str(e),
+                "note": "Generic handler used to return raw exception details."
+            },
+        )
 
 ## 5. /api/diet-summary
 @app.post("/api/diet-summary", response_model=DietSummary, tags=["Nutrition"])
@@ -279,31 +315,48 @@ async def get_diet_summary(request: DietSummaryRequest):
     Generates a high-level diet and meal plan summary based on the detected skin disease.
     """
     # ⚠️ Placeholder: Logic needs to query a certified nutrition database tailored to diseases.
-    request_dict = request.model_dump()
-    disease_type = request_dict["disease_type"]
-    query = request_dict["query"]
+    try:
+        request_dict = request.model_dump()
+        disease_type = request_dict["disease_type"]
+        query = request_dict["query"]
+        user_id = request_dict["user_id"]
+        if(not DB.get(user_id)):
+            DB[user_id] = DEFAULT_USER
+        elif DB[user_id]["diet_summary"]:
+            return DB[user_id]["diet_summary"]
 
-    system_prompt = DIET_SUMMARY_PROMPT.format(DISEASE_TYPE=disease_type)
+        system_prompt = DIET_SUMMARY_PROMPT.format(DISEASE_TYPE=disease_type)
 
-    request_payload = create_text_payload(system_prompt, query, DIET_SUMMARY_RESPONSE_SCHEMA)
-    response = call_llm(request_payload)
-    response = json.loads(response)
+        request_payload = create_text_payload_gemini(system_prompt, query, DIET_SUMMARY_RESPONSE_SCHEMA)
+        response = call_llm_gemini(request_payload)
+        response = json.loads(response)
 
-    print("Response: ", response)
+        print("Response: ", response)
 
-    user_id = request_dict["user_id"]
-    if(not DB.get(user_id)):
-        DB[user_id] = DEFAULT_USER
+        response =  DietSummary(
+            summary_text=response.get("summary_text"), 
+            macro_breakdown=response.get("macro_breakdown"), 
+            recommendations=response.get("recommendations")
+        )
 
-    response =  DietSummary(
-        summary_text=response.get("summary_text"), 
-        macro_breakdown=response.get("macro_breakdown"), 
-        recommendations=response.get("recommendations")
-    )
+        DB[user_id]["diet_summary"] = response
 
-    DB[user_id]["diet_summary"] = response
+        return response
 
-    return response
+    except Exception as e:
+        # Get the class name of the exception
+        error_type = type(e).__name__ 
+        
+        # Return a JSONResponse containing the raw exception details
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,  # Using 400 for generic client error
+            content={
+                "status": "error",
+                "type": error_type,
+                "message": str(e),
+                "note": "Generic handler used to return raw exception details."
+            },
+        )
 
 
 ## 6. /api/progression
@@ -315,17 +368,24 @@ async def track_progression(request: ProgressionRequest):
     """
     try:
         request_dict = request.model_dump()
-        filename1 = request_dict["filename1"]
-        filename2 = request_dict["filename2"]
+        image1_base64 = request_dict["image1_base64"]
+        image2_base64 = request_dict["image2_base64"]
+
+        if ".jpeg" in image1_base64 or ".jpg" in image1_base64 or ".png" in image1_base64:
+            image1_base64 = load_image(image1_base64)
+
+        if ".jpeg" in image2_base64 or ".jpg" in image2_base64 or ".png" in image2_base64:
+            image2_base64 = load_image(image2_base64)
+
         curr_score = request_dict["curr_score"]
         query = request_dict["query"]
 
         system_prompt = PROGRESSION_TRACKING_PROMPT.format(CURR_SCORE=curr_score)
 
-        request_payload = create_image_payload(system_prompt, query, [filename1, filename2], PROGRESSION_TRACKING_RESPONSE_SCHEMA)
+        request_payload = create_vision_payload_gemini(system_prompt, query, [image1_base64, image2_base64], PROGRESSION_TRACKING_RESPONSE_SCHEMA)
         print("Suggestion input payload: ", request_payload)
         
-        response = call_llm(request_payload)
+        response = call_llm_gemini(request_payload)
         response = json.loads(response)
 
         print("Response: ", response)
@@ -334,14 +394,20 @@ async def track_progression(request: ProgressionRequest):
         if(not DB.get(user_id)):
             DB[user_id] = DEFAULT_USER
 
+        average_metric = sum(metric['confidence_score'] for metric in response.get("metrics_tracked", [])) / len(response.get("metrics_tracked", []))
+
         response = ProgressionResult(
             analysis_date=get_current_date_and_time(),
             overall_change=response.get("overall_change"),
-            metrics_tracked=response.get("metrics_tracked", {}),
+            metrics_tracked=response.get("metrics_tracked", []),
             visual_notes=response.get("visual_notes"),
         )
-
+        
         DB[user_id]["progression_tracking"] = response
+        DB[user_id]['images'].append({
+            "image": image2_base64,
+            "confidence_score": average_metric
+        })
 
         return response
     
@@ -370,6 +436,11 @@ async def get_full_summary(request: FullSummaryRequest):
     try:
         request_dict = request.model_dump()
         query = request_dict["query"]
+        user_id = request_dict["user_id"]
+        if(not DB.get(user_id)):
+            DB[user_id] = DEFAULT_USER
+        elif DB[user_id]["full_summary"]:
+            return DB[user_id]["full_summary"]
 
         system_prompt = FULL_SUMMARY_PROMPT.format(
             DISEASE_TYPE=DB[user_id]["disease_type"], 
@@ -380,17 +451,13 @@ async def get_full_summary(request: FullSummaryRequest):
             PROGRESSION_TRACKING=DB[user_id]["progression_tracking"],
         )
 
-        request_payload = create_text_payload(system_prompt, query, FULL_SUMMARY_RESPONSE_SCHEMA)
+        request_payload = create_text_payload_gemini(system_prompt, query, FULL_SUMMARY_RESPONSE_SCHEMA)
         print("Suggestion input payload: ", request_payload)
         
-        response = call_llm(request_payload)
+        response = call_llm_gemini(request_payload)
         response = json.loads(response)
 
         print("Response: ", response)
-
-        user_id = request_dict["user_id"]
-        if(not DB.get(user_id)):
-            DB[user_id] = DEFAULT_USER
 
         response = FullSummary(
             analysis_date=get_current_date_and_time(),
@@ -417,6 +484,36 @@ async def get_full_summary(request: FullSummaryRequest):
                 "note": "Generic handler used to return raw exception details."
             },
         )
-
+    
+## 9. /api/get-images
+@app.post("/api/get-images", response_model=ResponseImages, tags=["images"])
+async def get_images(user_id: str):
+    """
+    Generates a comprehensive summary of the user's skin health, history, and all current recommendations.
+    """
+    try:
+        if(not DB.get(user_id)):
+            return ResponseImages(
+                images=[]
+            )
+        elif DB[user_id]["images"]:
+            return ResponseImages(
+                images=DB[user_id]["images"]
+            )
+    
+    except Exception as e:
+        # Get the class name of the exception
+        error_type = type(e).__name__ 
+        
+        # Return a JSONResponse containing the raw exception details
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,  # Using 400 for generic client error
+            content={
+                "status": "error",
+                "type": error_type,
+                "message": str(e),
+                "note": "Generic handler used to return raw exception details."
+            },
+        )
 
 # --- End of API Endpoints ---

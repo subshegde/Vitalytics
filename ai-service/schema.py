@@ -6,7 +6,7 @@ class DetectionRequest(BaseModel):
     """Model for the output of the /detect-disease endpoint."""
 
     user_id: str
-    filename: str
+    image_base64: str
     query: str
 
 
@@ -89,8 +89,8 @@ class DietSummary(BaseModel):
 class ProgressionRequest(BaseModel):
 
     user_id: str
-    filename1: str
-    filename2: str
+    image1_base64: str
+    image2_base64: str
     curr_score: float
     query: str
 
@@ -104,7 +104,7 @@ class ProgressionResult(BaseModel):
 
     analysis_date: str
     overall_change: str
-    metrics_tracked: ProgressionMetric
+    metrics_tracked: List[ProgressionMetric]
     visual_notes: str
 
 class FullSummaryRequest(BaseModel):
@@ -127,5 +127,9 @@ class FullSummary(BaseModel):
 
     analysis_date: str
     overall_status: str
-    key_metrics: FullSummaryKeyMetric
-    sections: List[FullSUmmarySection]
+    key_metrics: Optional[FullSummaryKeyMetric]
+    sections: Optional[List[FullSUmmarySection]]
+
+class ResponseImages(BaseModel):
+
+    images: Optional[List[dict]]

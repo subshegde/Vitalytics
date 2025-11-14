@@ -1,58 +1,49 @@
 {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "DietSummary",
-        "strict": true,
-        "schema": {
-            "type": "object",
+    "type": "OBJECT",
+    "properties": {
+        "summary_text": {
+            "type": "STRING",
+            "description": "A brief, actionable summary of the diet quality."
+        },
+        "macro_breakdown": {
+            "type": "OBJECT",
             "properties": {
-                "summary_text": {
-                    "type": "string",
-                    "description": "A brief, actionable summary of the diet quality."
+                "carbs": {
+                    "type": "NUMBER",
+                    "description": "Carbohydrate percentage of total calories.",
+                    "minimum": 0,
+                    "maximum": 100
                 },
-                "macro_breakdown": {
-                    "type": "object",
-                    "properties": {
-                        "carbs": {
-                            "type": "number",
-                            "description": "Carbohydrate percentage of total calories.",
-                            "minimum": 0,
-                            "maximum": 100
-                        },
-                        "protein": {
-                            "type": "number",
-                            "description": "Protein percentage of total calories.",
-                            "minimum": 0,
-                            "maximum": 100
-                        },
-                        "fats": {
-                            "type": "number",
-                            "description": "Fat percentage of total calories.",
-                            "minimum": 0,
-                            "maximum": 100
-                        }
-                    },
-                    "required": [
-                        "carbs",
-                        "protein",
-                        "fats"
-                    ],
-                "additionalProperties": false
+                "protein": {
+                    "type": "NUMBER",
+                    "description": "Protein percentage of total calories.",
+                    "minimum": 0,
+                    "maximum": 100
                 },
-                "recommendations": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "description": "Specific, actionable dietary recommendations."
+                "fats": {
+                    "type": "NUMBER",
+                    "description": "Fat percentage of total calories.",
+                    "minimum": 0,
+                    "maximum": 100
                 }
             },
             "required": [
-                "summary_text",
-                "macro_breakdown",
-                "recommendations"
-            ],
-            "additionalProperties": false
+                "carbs",
+                "protein",
+                "fats"
+            ]
+        },
+        "recommendations": {
+            "type": "ARRAY",
+            "items": {
+                "type": "STRING"
+            },
+            "description": "Specific, actionable dietary recommendations."
         }
-    }
+    },
+    "required": [
+        "summary_text",
+        "macro_breakdown",
+        "recommendations"
+    ]
 }

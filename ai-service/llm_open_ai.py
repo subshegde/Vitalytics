@@ -1,37 +1,14 @@
-from constraints import IMAGE_INPUT_FORMAT, TEXT_INPUT_FORMAT
-
 import os
-import base64
-import json
 from openai import OpenAI
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from typing import Optional, Dict, Any
+
+from constraints import IMAGE_INPUT_FORMAT, TEXT_INPUT_FORMAT
+from utils import load_image
 
 from dotenv import load_dotenv
 load_dotenv()
 
-# --- 1. Helper Function ---
-
-def load_image(file_path: str) -> Optional[str]:
-    """
-    Loads an image file from file_path, encodes it to base64,
-    and returns it as a string.
-    """
-    try:
-        # Open the image file in binary read mode
-        with open(file_path, "rb") as image_file:
-            # Read the file bytes, encode to base64, and decode to utf-8 string
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: Image file not found at {file_path}")
-        return None
-    except Exception as e:
-        print(f"Error loading image {file_path}: {e}")
-        return None
-
-# --- 2. Central API Call Function (Replaces call_llm_text/vision) ---
-
-def call_llm(payload: Dict[str, Any]) -> Optional[str]:
+def call_llm_openai(payload: Dict[str, Any]) -> Optional[str]:
     """
     Receives a complete, pre-formatted payload and makes the 
     OpenAI API call. This single function handles both text and vision.
@@ -60,9 +37,7 @@ def call_llm(payload: Dict[str, Any]) -> Optional[str]:
     except Exception as e:
         print(f"Error calling OpenAI: {e}")
         return None
-
-# --- 3. Payload Creation Functions (Fixed and Returning) ---
-
+    
 def create_text_payload(system_prompt, user_prompt, response_format):
     input_payload = TEXT_INPUT_FORMAT
     input_payload["messages"][0]["content"] = system_prompt
@@ -98,18 +73,3 @@ def create_image_payload(
         input_payload["response_format"] = response_format
 
     return input_payload
-
-
-def get_current_date_and_time():
-    """
-    Retrieves and formats the current date and time.
-    """
-    # Get the current date and time object
-    now = datetime.now()
-    
-    # Format the date and time into a readable string
-    # %Y = Year, %m = Month, %d = Day
-    # %H = Hour (24-hour), %M = Minute, %S = Second
-    date_string = now.strftime("Today's Date: %Y-%m-%d\nCurrent Time: %H:%M:%S")
-    
-    return date_string

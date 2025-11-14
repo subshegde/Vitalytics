@@ -1,54 +1,45 @@
 {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "HomeopathySuggestionResult",
-        "strict": true,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "suggestion_type": {
-                    "type": "string",
-                    "enum": [
-                        "Homeopathic Remedy"
-                    ]
-                },
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {
-                                "type": "string",
-                                "description": "The name of the homeopathic remedy (e.g., Arnica montana)."
-                            },
-                            "potency": {
-                                "type": "string",
-                                "description": "The prescribed potency (e.g., 30C, 200CK)."
-                            },
-                            "dosage": {
-                                "type": "string",
-                                "description": "How often and when to take it (e.g., 'Twice daily, 5 pills')."
-                            },
-                            "note": {
-                                "type": "string",
-                                "description": "Specific instruction or description of use."
-                            }
-                        },
-                        "required": [
-                            "name",
-                            "potency",
-                            "dosage",
-                            "note"
-                        ],
-                        "additionalProperties": false
+    "type": "OBJECT",
+    "properties": {
+        "suggestion_type": {
+            "type": "STRING",
+            "enum": [
+                "Homeopathic Remedy"
+            ]
+        },
+        "items": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {
+                        "type": "STRING",
+                        "description": "The name of the homeopathic remedy (e.g., Arnica montana)."
+                    },
+                    "potency": {
+                        "type": "STRING",
+                        "description": "The prescribed potency (e.g., 30C, 200CK)."
+                    },
+                    "dosage": {
+                        "type": "STRING",
+                        "description": "How often and when to take it (e.g., 'Twice daily, 5 pills')."
+                    },
+                    "note": {
+                        "type": "STRING",
+                        "description": "Specific instruction or description of use."
                     }
-                }
-            },
-            "required": [
-                "suggestion_type",
-                "items"
-            ],
-            "additionalProperties": false
+                },
+                "required": [
+                    "name",
+                    "potency",
+                    "dosage",
+                    "note"
+                ]
+            }
         }
-    }
+    },
+    "required": [
+        "suggestion_type",
+        "items"
+    ]
 }
