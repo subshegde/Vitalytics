@@ -1,6 +1,4 @@
-
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 
 import 'logger_interceptor.dart';
 
@@ -9,7 +7,7 @@ class DioClient {
 
   DioClient._internal(this._dio);
 
-  static Future<DioClient> create({required GlobalKey<NavigatorState> navigatorKey}) async {
+  static Future<DioClient> create() async {
     String? baseUrl = "http://10.11.7.50:9995/api/";
 
     final dio = Dio(
@@ -18,15 +16,13 @@ class DioClient {
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Accept': 'application/json',
-          'Accept-Encoding': 'gzip'
+          'Accept-Encoding': 'gzip',
         },
         responseType: ResponseType.json,
         sendTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 60),
       ),
-    )..interceptors.addAll([
-        LoggerInterceptor()
-      ]);
+    )..interceptors.addAll([LoggerInterceptor()]);
     return DioClient._internal(dio);
   }
 

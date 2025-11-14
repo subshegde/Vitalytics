@@ -5,12 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
 import 'package:vitalytics/presentation/dashboard/pages/signin.dart';
 import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
+import 'package:vitalytics/sl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await setUpServiceLocator();
   // Load SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
+  final prefs = sl<SharedPreferences>();
   final bool isLogin = prefs.getBool('isLogin') ?? false;
 
   runApp(VitalyticsApp(isLogin: isLogin));
