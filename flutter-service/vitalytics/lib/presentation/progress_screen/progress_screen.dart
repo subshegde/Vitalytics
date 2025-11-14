@@ -23,7 +23,6 @@ class _ProgressScreenState extends State<ProgressScreen>
 
     _viewTabController = TabController(length: 2, vsync: this);
 
-    // Sync TabBar with Cubit
     _viewTabController.addListener(() {
       final cubit = context.read<ProgressCubit>();
 
