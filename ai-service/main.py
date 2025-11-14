@@ -197,26 +197,24 @@ async def search_nutrition_details(request: NutritionItemRequest):
     # ⚠️ Placeholder: Logic needs to query a certified nutrition database.
     request_dict = request.model_dump()
     name = request_dict["name"]
-    type_ = request_dict["type"]
     disease_type = request_dict["disease_type"]
     query = request_dict["query"]
 
-    system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, TYPE=type_, DISEASE_TYPE=disease_type)
+    system_prompt = DETAILED_NUTRITION_PROMPT.format(NAME=name, DISEASE_TYPE=disease_type)
 
     request_payload = create_text_payload(system_prompt, query, DETAILED_NUTRITION_RESPONSE_SCHEMA)
+
+    print(f"Detailed Nutrition input payload: ", request_payload)
     response = call_llm(request_payload)
     response = json.loads(response)
 
-    return NutritionItem(
-        name="Avocado",
-        type="fruit",
-        benefit_for_skin="Rich in healthy fats, which are essential for skin barrier function. They also contain compounds that may protect your skin from sun damage.",
-        key_nutrients=[
-            "Vitamin E",
-            "Vitamin C",
-            "Potassium",
-            "Oleic Acid (Monounsaturated Fat)",
-        ],
+    print("Response: ", response)
+
+    return NutritionItemDetailed(
+        item_name=response['item_name'],
+        category=response['category'],
+        description=response['description'],
+        key_nutrients=response['key_nutrients']
     )
 
 ## 5. /api/diet-summary

@@ -53,6 +53,16 @@ class NutritionItem(BaseModel):
     benefit: str
     source_foods: List[str]
 
+class KeyNutrient(BaseModel):
+    nutrient: str
+    amount: str
+
+class NutritionItemDetailed(BaseModel):
+    item_name: str
+    category: str
+    description: str
+    key_nutrients: List[KeyNutrient]
+
 class NutritionsResponse(BaseModel):
     report_title: str
     nutritions: List[NutritionItem]
@@ -64,12 +74,17 @@ class DietSummaryRequest(BaseModel):
     disease_type: str
     query: str
 
+
+class MacroBreakdown(BaseModel):
+    carbs: int
+    protein: int
+    fats: int
+
 class DietSummary(BaseModel):
     """Model for the overall diet summary."""
-
-    title: str
     summary_text: str
-    suggested_meals: List[dict]
+    macro_breakdown: MacroBreakdown
+    recommendations: List[str]
 
 class ProgressionRequest(BaseModel):
 
