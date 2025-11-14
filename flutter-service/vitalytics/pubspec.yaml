@@ -41,6 +41,9 @@ dependencies:
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
 
+  pdf: ^3.10.4
+  printing: ^5.12.0
+
 
   flutter_launcher_icons: ^0.13.1
   dio: ^5.9.0

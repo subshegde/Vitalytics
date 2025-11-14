@@ -15,6 +15,7 @@ import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/presentation/diet/cubit/diet_cubit.dart';
 import 'package:vitalytics/presentation/diet/diet_page.dart';
+import 'package:vitalytics/presentation/summary/summary_page.dart';
 import 'package:vitalytics/sl.dart';
 
 import '../../nutrition_screen/nutrition_screen.dart';
@@ -311,6 +312,23 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
                 MaterialPageRoute(builder: (_) => ProgressScreen()),
               ),
             ),
+            const SizedBox(width: 16),
+            _quickAction(
+              context,
+              icon: Icons.summarize,
+              label: "Summary",
+              onTap: () {
+                 final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FullSummaryScreen(
+                    userId: loggedUserId.toString(),
+                    query: "",
+                  )),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -373,9 +391,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _tipCard(SkinCareTip tip, double width, double height) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Clicked: ${tip.title}")));
+       
       },
       child: Container(
         width: width,
