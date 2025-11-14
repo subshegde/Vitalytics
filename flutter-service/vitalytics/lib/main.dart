@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
 import 'package:vitalytics/presentation/dashboard/pages/main_page.dart';
+import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
 
 void main() {
   runApp(const MyApp());
@@ -91,9 +92,9 @@ class MyApp extends StatelessWidget {
           }),
           iconTheme: MaterialStateProperty.resolveWith((states) {
             if (states.contains(MaterialState.selected)) {
-              return const IconThemeData(color: secondaryColor); // Selected icon color
+              return const IconThemeData(color: secondaryColor); 
             }
-            return const IconThemeData(color: Colors.white60); // Unselected icon color
+            return const IconThemeData(color: Colors.white60); 
           }),
         ),
         
@@ -109,7 +110,7 @@ class MyApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.white),
         ),
       ),
-      home: const MainPage(),
+      home: const HomeDashboardPage(),
       debugShowCheckedModeBanner: false,
     );
   }

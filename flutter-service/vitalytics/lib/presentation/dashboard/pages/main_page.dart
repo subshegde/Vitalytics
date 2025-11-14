@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
+import 'package:vitalytics/presentation/dashboard/pages/skin_care_home.dart';
 import 'analysis_page.dart'; // Import the separate analysis page
 
 class MainPage extends StatefulWidget {
@@ -9,14 +11,14 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 1; // Default to 'Analysis' tab
-  final PageController _pageController = PageController(initialPage: 1);
+  int _selectedIndex = 0; // Default to 'Analysis' tab
+  final PageController _pageController = PageController(initialPage: 0);
 
   // List of pages to be displayed
   final List<Widget> _pages = [
-    const _PlaceholderPage(title: 'Home'), // Placeholder for Home
+    const HomeDashboardPage(), // Placeholder for Home
     const AnalysisPage(), // Your separate Analysis page
-    const _PlaceholderPage(title: 'History'), // Placeholder for History
+    const RecommendationsScreen(), // Placeholder for History
     const _PlaceholderPage(title: 'Profile'), // Placeholder for Profile
   ];
 
@@ -71,7 +73,7 @@ class _MainPageState extends State<MainPage> {
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
-            label: 'History',
+            label: 'Rec',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
