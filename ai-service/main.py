@@ -16,6 +16,7 @@ from schema import (
     DietSummaryRequest,
     DietSummary,
     ProgressionRequest,
+    ProgressionMetric,
     ProgressionResult,
     FullSummaryRequest,
     FullSummary,
@@ -108,7 +109,7 @@ async def detect_disease(request: DetectionRequest):
             ),
         )
         DB[user_id]["disease_detected"] = response
-        DB[user_id]['images'].append({
+        DB[user_id]["images"].append({
             "image": image_base64,
             "confidence_score": response.confidence_score
         })
@@ -374,16 +375,24 @@ async def track_progression(request: ProgressionRequest):
     """
     try:
         request_dict = request.model_dump()
-        image1_base64 = request_dict["image1_base64"]
-        image2_base64 = request_dict["image2_base64"]
-
-        if ".jpeg" in image1_base64 or ".jpg" in image1_base64 or ".png" in image1_base64:
-            image1_base64 = load_image(image1_base64)
+        image2_base64 = request_dict["image_base64"]
 
         if ".jpeg" in image2_base64 or ".jpg" in image2_base64 or ".png" in image2_base64:
             image2_base64 = load_image(image2_base64)
 
-        curr_score = request_dict["curr_score"]
+        user_id = request_dict["user_id"]
+        if (not DB.get(user_id)) or (not DB.get(user_id)["images"]):
+            return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,  # Using 400 for generic client error
+            content={
+                "status": "error",
+                "message": "Cannot do progress on first image",
+                "note": "Cannot do progress on first image"
+            },
+        )
+
+        image1_base64 = DB.get(user_id)["images"][-1]["image"]
+        curr_score = DB.get(user_id)["images"][-1]["image"]
         query = request_dict["query"]
 
         system_prompt = PROGRESSION_TRACKING_PROMPT.format(CURR_SCORE=curr_score)
@@ -395,10 +404,6 @@ async def track_progression(request: ProgressionRequest):
         response = json.loads(response)
 
         print("Response: ", response)
-
-        user_id = request_dict["user_id"]
-        if(not DB.get(user_id)):
-            DB[user_id] = DEFAULT_USER
 
         average_metric = sum(metric['confidence_score'] for metric in response.get("metrics_tracked", [])) / len(response.get("metrics_tracked", []))
 

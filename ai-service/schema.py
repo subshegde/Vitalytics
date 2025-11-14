@@ -90,9 +90,7 @@ class DietSummary(BaseModel):
 class ProgressionRequest(BaseModel):
 
     user_id: str
-    image1_base64: str
-    image2_base64: str
-    curr_score: float
+    image_base64: str
     query: str
 
 class ProgressionMetric(BaseModel):
@@ -103,10 +101,10 @@ class ProgressionMetric(BaseModel):
 class ProgressionResult(BaseModel):
     """Model for the progression tracking result."""
 
-    analysis_date: str
-    overall_change: str
-    metrics_tracked: List[ProgressionMetric]
-    visual_notes: str
+    analysis_date: Optional[str]
+    overall_change: Optional[str]
+    metrics_tracked: Optional[List[ProgressionMetric]]
+    visual_notes: Optional[str]
 
 class FullSummaryRequest(BaseModel):
     """Model for the final full summary."""
