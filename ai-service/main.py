@@ -56,6 +56,7 @@ from dependency import (
 )
 
 from constraints import DEFAULT_USER
+from image_search import search_google_images
 
 DB = {}
 
@@ -233,10 +234,15 @@ async def get_skin_health_nutrition(request: NutritionRequest):
 
         nutrition_list = []
         for nutrition in response["nutrients"]:
+            web_image = search_google_images(nutrition.get("name"))
+            image_url = ""
+            if web_image:
+                image_url=web_image[0]['source_url']
             nutrition_list.append(NutritionItem(
                 name=nutrition.get("name"),
                 benefit=nutrition.get("name"),
-                source_foods=nutrition.get("source_foods")
+                source_foods=nutrition.get("source_foods"),
+                image=image_url
             ))
         
         response = NutritionsResponse(

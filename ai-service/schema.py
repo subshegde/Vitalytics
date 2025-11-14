@@ -52,6 +52,7 @@ class NutritionItem(BaseModel):
     name: str
     benefit: str
     source_foods: List[str]
+    image: str
 
 class KeyNutrient(BaseModel):
     nutrient: str
