@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 class DBHelper {
   static const _dbName = 'vitalytics.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2; // VERSION UPDATED ⚠️
 
   DBHelper._privateConstructor();
   static final DBHelper instance = DBHelper._privateConstructor();
@@ -27,10 +27,12 @@ class DBHelper {
       path,
       version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    // Users table
     await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,25 +44,43 @@ class DBHelper {
       )
     ''');
 
-    // Seed default user
+    // Default user insert
     await db.insert('users', {
       'username': 'Test User',
       'email': 'test@example.com',
-      'password': '123456',     // FIXED: password added
+      'password': '123456',
       'bio': 'This is a test user',
-      'profile_pic_path': null,
+      'profile_pic_path': null
     });
+
+    // Disease table
+    await db.execute('''
+      CREATE TABLE disease_detection (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        detected_disease TEXT NOT NULL,
+        confidence_score REAL NOT NULL,
+        description TEXT NOT NULL,
+        precautionary_steps TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
-  // Raw helpers
-  Future<int> rawInsert(String sql, [List<Object?>? args]) async {
-    final db = await database;
-    return await db.rawInsert(sql, args);
-  }
-
-  Future<List<Map<String, dynamic>>> rawQuery(String sql,
-      [List<Object?>? args]) async {
-    final db = await database;
-    return await db.rawQuery(sql, args);
+  // Handle DB upgrades
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE disease_detection (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          detected_disease TEXT NOT NULL,
+          confidence_score REAL NOT NULL,
+          description TEXT NOT NULL,
+          precautionary_steps TEXT NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+      ''');
+    }
   }
 }

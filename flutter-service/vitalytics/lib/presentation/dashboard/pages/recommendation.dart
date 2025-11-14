@@ -1,6 +1,13 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/core/constants/app_colors.dart';
-import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart' hide primeGreen900, primeAccent, primeText, primeGreen950;
+import 'package:vitalytics/data/db/disease_detection_dao.dart';
+import 'package:vitalytics/data/models/disease_detection/disease_detection_model.dart';
+import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart'
+    hide primeGreen900, primeAccent, primeText, primeGreen950;
+import 'package:vitalytics/sl.dart';
 
 class RecommendationsScreen extends StatefulWidget {
   const RecommendationsScreen({super.key});
@@ -13,6 +20,34 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
   final Widget pharmaMedicines = _buildPharmaceuticalMedicines();
   final Widget homeSolutions = _buildHomeAndNaturalSolutions();
   final Widget homeopathicRemedies = _buildHomeopathicRemedies();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastDetection();
+  }
+
+  DiseaseDetectionModel? lastDetection;
+  bool isLoading = true;
+
+  Future<void> _loadLastDetection() async {
+    final prefs = sl<SharedPreferences>();
+    final userId = prefs.getInt('logged_in_user_id');
+    final dao = DiseaseDetectionDao();
+    final allDiseases = await dao.getDiseasesByUser(userId ?? 0);
+
+    if (allDiseases.isNotEmpty) {
+      setState(() {
+        // Show the last inserted record
+        lastDetection = allDiseases.last;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +68,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
-            'Recommendations for Eczema',
-            style: TextStyle(
-              color: primeText,
-              fontWeight: FontWeight.w600,
-            ),
+            'Recommendations',
+            style: TextStyle(color: primeText, fontWeight: FontWeight.w600),
           ),
           centerTitle: true,
         ),
@@ -45,6 +77,65 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
         body: NestedScrollView(
           headerSliverBuilder: (context, inner) {
             return [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primeGreen900,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: primeGreen700.withOpacity(0.4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Last Detection Result",
+                      style: TextStyle(
+                        color: primeText,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Disease: ${lastDetection!.detected_disease}",
+                      style: const TextStyle(color: primeTextDim, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Confidence: ${(lastDetection!.confidence_score * 100).toStringAsFixed(1)}%",
+                      style: const TextStyle(color: primeTextDim, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Description: ${lastDetection!.description}",
+                      style: const TextStyle(color: primeTextDim, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    if (lastDetection!.precautionary_steps.isNotEmpty) ...[
+                      const Text(
+                        "Precautionary Steps:",
+                        style: TextStyle(
+                          color: primeText,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ...lastDetection!.precautionary_steps.map(
+                        (step) => Text(
+                          "• $step",
+                          style: const TextStyle(
+                            color: primeTextDim,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
               // -----------------------------------------
               // TOP HEADER (Disclaimer + Nutrition Button)
               // -----------------------------------------
@@ -68,8 +159,11 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.info_outline,
-                                color: primeAccent, size: 26),
+                            const Icon(
+                              Icons.info_outline,
+                              color: primeAccent,
+                              size: 26,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -98,27 +192,27 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      // const SizedBox(height: 16),
 
-                      // ---------------- NUTRITION BUTTON ----------------
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.search, size: 22),
-                        label: const Text('Skin Health Nutrition'),
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primeAccent,
-                          foregroundColor: primeGreen950,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          minimumSize: const Size(double.infinity, 54),
-                        ),
-                      ),
+                      // // ---------------- NUTRITION BUTTON ----------------
+                      // ElevatedButton.icon(
+                      //   icon: const Icon(Icons.search, size: 22),
+                      //   label: const Text('Skin Health Nutrition'),
+                      //   onPressed: () {},
+                      //   style: ElevatedButton.styleFrom(
+                      //     backgroundColor: primeAccent,
+                      //     foregroundColor: primeGreen950,
+                      //     padding: const EdgeInsets.symmetric(vertical: 16),
+                      //     textStyle: const TextStyle(
+                      //       fontWeight: FontWeight.bold,
+                      //       fontSize: 16,
+                      //     ),
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(28),
+                      //     ),
+                      //     minimumSize: const Size(double.infinity, 54),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -136,8 +230,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                     unselectedLabelColor: primeTextDim,
                     indicatorColor: primeAccent,
                     indicatorWeight: 3,
-                    overlayColor:
-                        MaterialStateProperty.all(Colors.transparent),
+                    overlayColor: MaterialStateProperty.all(Colors.transparent),
                     tabs: const [
                       Tab(text: 'All'),
                       Tab(text: 'Medicines'),
@@ -234,8 +327,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
         _RecommendationItem(
           icon: Icons.grass_outlined,
           title: 'Sulphur',
-          subtitle:
-              'Often recommended for chronic cases with intense itching.',
+          subtitle: 'Often recommended for chronic cases with intense itching.',
         ),
       ],
     );
@@ -267,9 +359,7 @@ class _StyledExpansionTile extends StatelessWidget {
       backgroundColor: primeGreen900,
       collapsedBackgroundColor: primeGreen900,
 
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       collapsedShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -340,17 +430,13 @@ class _RecommendationItem extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: primeTextDim,
-                      height: 1.4,
-                    ),
+                    style: const TextStyle(color: primeTextDim, height: 1.4),
                   ),
                 ],
               ),
             ),
 
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: primeTextDim),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: primeTextDim),
           ],
         ),
       ),
@@ -374,10 +460,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrink, bool overlaps) {
-    return Container(
-      color: primeGreen950,
-      child: tabBar,
-    );
+    return Container(color: primeGreen950, child: tabBar);
   }
 
   @override

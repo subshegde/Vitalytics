@@ -366,8 +366,7 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   Widget _discoverCard(DiscoverItem item) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
+        // ScaffoldMessenger.of(context) .showSnackBar(SnackBar(content: Text("Clicked: ${item.title}")));
       },
       child: Container(
         decoration: BoxDecoration(

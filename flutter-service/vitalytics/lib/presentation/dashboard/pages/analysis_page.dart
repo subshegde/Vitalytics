@@ -8,6 +8,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_cubit.dart';
 import 'package:vitalytics/presentation/dashboard/cubit/analysis_page_state.dart';
+import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 import 'package:vitalytics/sl.dart';
 
 const Color primeGreen950 = Color(0xFF0D1F12);
@@ -188,6 +189,12 @@ class _AnalysisPageState extends State<AnalysisPage>
                           style: TextStyle(color: Colors.white),
                         ),
                         backgroundColor: primeGreen700,
+                      ),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RecommendationsScreen(),
                       ),
                     );
                   }
