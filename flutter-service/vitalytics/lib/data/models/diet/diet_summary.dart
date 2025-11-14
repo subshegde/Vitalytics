@@ -1,16 +1,47 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class DietModel {
+  String? summaryText;
+  MacroBreakdown? macroBreakdown;
+  List<String>? recommendations;
 
-part 'diet_summary.freezed.dart';
-part 'diet_summary.g.dart';
+  DietModel({this.summaryText, this.macroBreakdown, this.recommendations});
 
-@freezed
-abstract class DietSummaryResponse with _$DietSummaryResponse {
-  const factory DietSummaryResponse({
-    required String title,
-    required String summary_text,
-    required List<Map<String, dynamic>> suggested_meals,
-  }) = _DietSummaryResponse;
+  DietModel.fromJson(Map<String, dynamic> json) {
+    summaryText = json['summary_text'];
+    macroBreakdown = json['macro_breakdown'] != null
+        ? new MacroBreakdown.fromJson(json['macro_breakdown'])
+        : null;
+    recommendations = json['recommendations'].cast<String>();
+  }
 
-  factory DietSummaryResponse.fromJson(Map<String, dynamic> json) =>
-      _$DietSummaryResponseFromJson(json);
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['summary_text'] = this.summaryText;
+    if (this.macroBreakdown != null) {
+      data['macro_breakdown'] = this.macroBreakdown!.toJson();
+    }
+    data['recommendations'] = this.recommendations;
+    return data;
+  }
+}
+
+class MacroBreakdown {
+  int? carbs;
+  int? protein;
+  int? fats;
+
+  MacroBreakdown({this.carbs, this.protein, this.fats});
+
+  MacroBreakdown.fromJson(Map<String, dynamic> json) {
+    carbs = json['carbs'];
+    protein = json['protein'];
+    fats = json['fats'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['carbs'] = this.carbs;
+    data['protein'] = this.protein;
+    data['fats'] = this.fats;
+    return data;
+  }
 }

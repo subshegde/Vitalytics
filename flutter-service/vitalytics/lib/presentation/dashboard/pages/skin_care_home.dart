@@ -9,9 +9,12 @@ import 'package:vitalytics/data/models/discover_item.dart';
 import 'package:vitalytics/data/models/skin_care_tip_model.dart';
 import 'package:vitalytics/data/models/user/user.dart';
 import 'package:vitalytics/data/dao/user_dao.dart';
+import 'package:vitalytics/data/request/diet_request.dart';
 import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
+import 'package:vitalytics/presentation/diet/cubit/diet_cubit.dart';
+import 'package:vitalytics/presentation/diet/diet_page.dart';
 import 'package:vitalytics/sl.dart';
 
 import '../../nutrition_screen/nutrition_screen.dart';
@@ -190,73 +193,126 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
   // ---------------- QUICK ACTIONS -----------------
   Widget _buildQuickActions(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _quickAction(
-            context,
-            icon: Icons.document_scanner_outlined,
-            label: "New Scan",
-            onTap: () => Navigator.push(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _quickAction(
               context,
-              MaterialPageRoute(builder: (_) => const AnalysisPage()),
+              icon: Icons.document_scanner_outlined,
+              label: "New Scan",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalysisPage()),
+              ),
             ),
-          ),
-          _quickAction(
-            context,
-            icon: Icons.recommend_outlined,
-            label: "Recommendation",
-            onTap: () => Navigator.push(
+            const SizedBox(width: 16),
+
+            _quickAction(
               context,
-              MaterialPageRoute(
-                builder: (_) => MultiBlocProvider(
-                  providers: [
-                    BlocProvider(create: (_) => RecommendationCubit()),
-                    BlocProvider(
-                      create: (_) => HomeopathyRecommendationCubit(),
-                    ),
-                  ],
-                  child: const RecommendationsScreen(),
+              icon: Icons.recommend_outlined,
+              label: "Recommendation",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider(create: (_) => RecommendationCubit()),
+                      BlocProvider(
+                        create: (_) => HomeopathyRecommendationCubit(),
+                      ),
+                    ],
+                    child: const RecommendationsScreen(),
+                  ),
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 16),
 
-          _quickAction(
-            context,
-            icon: Icons.spa_outlined,
-            label: "Nutritions",
-            onTap: () async {
-              final prefs = sl<SharedPreferences>();
-              final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
-              final dao = DiseaseDetectionDao();
-              final diseases = await dao.getDiseasesByUser(loggedUserId);
-
-              final diseaseName = diseases.isNotEmpty
-                  ? diseases.last.detected_disease
-                  : "";
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NutritionScreen(
-                    userId: loggedUserId,
-                    diseaseType: diseaseName,
-                  ),
-                ),
-              );
-            },
-          ),
-          _quickAction(
-            context,
-            icon: Icons.history_outlined,
-            label: "Progress Tracking",
-            onTap: () => Navigator.push(
+            _quickAction(
               context,
-              MaterialPageRoute(builder: (_) => ProgressScreen()),
+              icon: Icons.spa_outlined,
+              label: "Nutritions",
+              onTap: () async {
+                final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+                final dao = DiseaseDetectionDao();
+                final diseases = await dao.getDiseasesByUser(loggedUserId);
+
+                final diseaseName = diseases.isNotEmpty
+                    ? diseases.last.detected_disease
+                    : "";
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NutritionScreen(
+                      userId: loggedUserId,
+                      diseaseType: diseaseName,
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+
+            _quickAction(
+              context,
+              icon: Icons.monitor_weight_outlined,
+              label: "Diet",
+              onTap: () async {
+                final prefs = sl<SharedPreferences>();
+                final loggedUserId = prefs.getInt('logged_in_user_id') ?? 0;
+
+                final dao = DiseaseDetectionDao();
+                final diseases = await dao.getDiseasesByUser(loggedUserId);
+
+                final diseaseName = diseases.isNotEmpty
+                    ? diseases.last.detected_disease
+                    : "";
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MultiBlocProvider(
+                      providers: [
+                        BlocProvider(
+                          create: (_) => DietCubit()
+                            ..fetchDiet(
+                              DietRequest(
+                                userId: loggedUserId.toString(),
+                                diseaseType: diseaseName,
+                                query: "",
+                              ),
+                            ),
+                        ),
+                      ],
+                      child: DietPage(
+                        userId: loggedUserId.toString(),
+                        diseaseType: diseaseName,
+                        query: "",
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(width: 16),
+
+            _quickAction(
+              context,
+              icon: Icons.history_outlined,
+              label: "Progress Tracking",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProgressScreen()),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
