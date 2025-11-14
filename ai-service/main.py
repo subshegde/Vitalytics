@@ -312,47 +312,34 @@ async def get_full_summary(request: FullSummaryRequest):
     Generates a comprehensive summary of the user's skin health, history, and all current recommendations.
     """
     request_dict = request.model_dump()
-
-    user_id = request_dict["user_id"]
-    if(not DB.get(user_id)):
-        DB[user_id] = DEFAULT_USER
-
     query = request_dict["query"]
 
     system_prompt = FULL_SUMMARY_PROMPT.format(
         DISEASE_TYPE=DB[user_id]["disease_type"], 
         SUGGESTION_MEDICINE=DB[user_id]["suggestion_medicine"], 
         SUGGESTION_HOMEOPATHY=DB[user_id]["suggestion_homeopathy"], 
-        NUTRITIONS=DB[user_id]["nutritions"],
+        SUGGESTION_NUTRITIONS=DB[user_id]["suggestion_nutritions"],
         DIET_SUMMARY=DB[user_id]["diet_summary"],
         PROGRESSION_TRACKING=DB[user_id]["progression_tracking"],
     )
 
     request_payload = create_text_payload(system_prompt, query, FULL_SUMMARY_RESPONSE_SCHEMA)
+    print("Suggestion input payload: ", request_payload)
+    
     response = call_llm(request_payload)
+    response = json.loads(response)
 
-    # Mock Data Aggregation
-    mock_detected_disease = "Atopic Dermatitis (Eczema)"
+    print("Response: ", response)
 
-    mock_meds = [{"name": "Hydrocortisone Cream (0.5%)", "dosage": "Apply twice daily"}]
-    mock_homeo = [{"name": "Sulphur", "potency": "30C"}]
-    mock_nutrition = [
-        {"item": "Avocado", "benefit": "Skin barrier function"},
-        {"item": "Omega-3", "benefit": "Reduce inflammation"},
-    ]
+    user_id = request_dict["user_id"]
+    if(not DB.get(user_id)):
+        DB[user_id] = DEFAULT_USER
 
     response = FullSummary(
-        last_analysis_date="2025-11-10",
-        disease_history=[
-            "Eczema (Diagnosed 6 months ago)",
-            "Mild Fungal Infection (Cleared 1 month ago)",
-        ],
-        current_status=f"Current condition is **{mock_detected_disease}**, showing slow but steady **improvement** based on the last progression check.",
-        recommendations_snapshot={
-            "Medicine": mock_meds,
-            "Homeopathy": mock_homeo,
-            "Nutrition": mock_nutrition,
-        },
+        analysis_date=get_current_date_and_time(),
+        overall_status=response.get("overall_status"),
+        key_metrics=response.get("key_metrics"),
+        sections=response.get("sections"),
     )
 
     DB[user_id]["full_summary"] = response

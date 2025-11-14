@@ -101,10 +101,19 @@ class FullSummaryRequest(BaseModel):
     user_id: str
     query: str
 
+class FullSummaryKeyMetric(BaseModel):
+    diet_score: int
+    progression_trend: str
+
+class FullSUmmarySection(BaseModel):
+    section_title: str
+    brief_summary: str
+    recommendation: str
+
 class FullSummary(BaseModel):
     """Model for the final full summary."""
 
-    last_analysis_date: str
-    disease_history: List[str]
-    current_status: str
-    recommendations_snapshot: dict  # Holds latest medicine, homeopathy, and nutrition
+    analysis_date: str
+    overall_status: str
+    key_metrics: FullSummaryKeyMetric
+    sections: List[FullSUmmarySection]
