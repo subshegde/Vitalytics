@@ -7,6 +7,9 @@ import 'package:vitalytics/presentation/dashboard/pages/analysis_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/profile_page.dart';
 import 'package:vitalytics/presentation/dashboard/pages/recommendation.dart';
 
+import '../../nutrition_screen/nutrition_screen.dart';
+import '../../progress_screen/progress_screen.dart';
+
 // THEME COLORS
 const Color primeGreen950 = Color(0xFF0a2e26);
 const Color primeGreen900 = Color(0xFF114232);
@@ -183,15 +186,25 @@ class _HomeDashboardPageState extends State<HomeDashboardPage> {
           _quickAction(
             context,
             icon: Icons.spa_outlined,
-            label: "Treatments",
-            onTap: () {},
+            label: "Nutritions",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) =>  NutritionScreen()),
+              );
+            },
           ),
 
           _quickAction(
             context,
             icon: Icons.history_outlined,
-            label: "History",
-            onTap: () {},
+            label: "Progress Tracking",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) =>  ProgressScreen()),
+              );
+            },
           ),
         ],
       ),
